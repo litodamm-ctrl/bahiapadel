@@ -1,0 +1,7 @@
+# Configuración de Netlify para Bahía Padel
+#  - publish = "."           -> el sitio es el index.html en la raíz
+#  - functions = "netlify/functions" -> aquí vive la función-proxy segura
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
