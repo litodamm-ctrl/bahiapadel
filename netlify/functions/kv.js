@@ -33,6 +33,7 @@
      ACCESS_CODES                "david:codigo1,sary:codigo2" (uno por persona;
                                  permite revocar a una sola quitando su línea)
      APP_READ_CODE               (opcional) solo lectura para la app de videos
+     APP_PEDIDO_CODE             (opcional) acotado a pedido:* (cola) + lectura video:*
      SESSION_SECRET              (opcional) para el token de sesión con caducidad
      SESSION_TTL_HOURS           (opcional) horas de validez del token (def. 12)
    ──────────────────────────────────────────────────────────────── */
@@ -43,6 +44,7 @@ const URL_BASE = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ACCESS_CODE = process.env.APP_ACCESS_CODE;
 const READ_CODE = process.env.APP_READ_CODE;
+const PEDIDO_CODE = process.env.APP_PEDIDO_CODE;
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const SESSION_TTL_HOURS = parseInt(process.env.SESSION_TTL_HOURS || "12", 10);
 
@@ -213,8 +215,9 @@ exports.handler = async function (event) {
   if (!usuario) usuario = usuarioDeCodigo(code);
   const esAdmin = !!usuario;
   const esLectura = !esAdmin && READ_CODE ? igualSeguro(code, READ_CODE) : false;
+  const esPedido = !esAdmin && !esLectura && PEDIDO_CODE ? igualSeguro(code, PEDIDO_CODE) : false;
 
-  if (!esAdmin && !esLectura) {
+  if (!esAdmin && !esLectura && !esPedido) {
     await rlFallo(ip, rl.rec); // credencial inválida → cuenta como intento fallido
     return respuesta(401, { error: "Código incorrecto" });
   }
@@ -222,20 +225,32 @@ exports.handler = async function (event) {
   // Acceso válido → no penalizar; limpiar el contador si existía.
   await rlLimpiar(ip, rl.rec);
 
-  if (action === "auth") return respuesta(200, { ok: true, modo: esAdmin ? "admin" : "lectura" });
+  if (action === "auth") return respuesta(200, { ok: true, modo: esAdmin ? "admin" : (esPedido ? "pedido" : "lectura") });
   if (action === "login") {
     const t = esAdmin ? firmarToken(usuario) : null;
     return respuesta(200, { ok: true, token: t, ttlHours: SESSION_TTL_HOURS });
   }
 
-  // El código de la app de videos es de SOLO LECTURA y solo sobre claves video:*
+  // Permisos de los códigos acotados (no-admin).
   if (!esAdmin) {
-    if (action !== "get" && action !== "list") {
-      return respuesta(403, { error: "Código de solo lectura: solo get/list" });
-    }
     const objetivo = action === "list" ? String(prefix || "") : String(key || "");
-    if (objetivo.indexOf("video:") !== 0) {
-      return respuesta(403, { error: "Código de solo lectura: solo claves video:*" });
+    if (esLectura) {
+      // App de videos (solo lectura de reservas): get/list sobre video:*
+      if (action !== "get" && action !== "list") {
+        return respuesta(403, { error: "Código de solo lectura: solo get/list" });
+      }
+      if (objetivo.indexOf("video:") !== 0) {
+        return respuesta(403, { error: "Código de solo lectura: solo claves video:*" });
+      }
+    } else if (esPedido) {
+      // Cola de videos: get/set/delete/list sobre pedido:*, y get/list sobre video:*
+      if (objetivo.indexOf("video:") === 0) {
+        if (action !== "get" && action !== "list") {
+          return respuesta(403, { error: "Código de pedidos: video:* es solo lectura" });
+        }
+      } else if (objetivo.indexOf("pedido:") !== 0) {
+        return respuesta(403, { error: "Código de pedidos: solo claves pedido:* y video:*" });
+      }
     }
   }
 
