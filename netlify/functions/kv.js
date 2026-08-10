@@ -58,10 +58,10 @@ exports.handler = async function (event) {
   try { cuerpo = JSON.parse(event.body || "{}"); }
   catch (e) { return respuesta(400, { error: "JSON inválido" }); }
 
-  const { action, code, key, value, prefix } = cuerpo;
+      const action = cuerpo.action || cuerpo.op, code = cuerpo.code != null ? cuerpo.code : cuerpo.accessCode, key = cuerpo.key, value = cuerpo.value, prefix = cuerpo.prefix != null ? cuerpo.prefix : cuerpo.key;
 
   if (!igualSeguro(code, ACCESS_CODE)) return respuesta(401, { error: "Código incorrecto" });
-  if (action === "auth") return respuesta(200, { ok: true });
+  if (action === "auth" || action === "ping") return respuesta(200, { ok: true });
 
   // Claves permitidas: letras, números y : . - _  (evita inyección en la query)
   if (action !== "list" && !/^[\w:.-]{1,200}$/.test(key || "")) {
