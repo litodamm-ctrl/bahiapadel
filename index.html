@@ -34,6 +34,7 @@
   button{font-family:inherit;cursor:pointer;}
   input:focus-visible, button:focus-visible, select:focus-visible{outline:2px solid var(--coral); outline-offset:2px;}
   ::selection{background:var(--coral); color:var(--white);}
+
   header{background:linear-gradient(160deg, var(--bay-deep) 0%, var(--bay-deep-2) 100%); position:relative; padding:28px 20px 46px;}
   .header-inner{max-width:960px; margin:0 auto;}
   .brand{display:flex; align-items:center; gap:10px;}
@@ -45,18 +46,22 @@
   .tab-btn.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .lock-btn{margin-left:auto; padding:9px 14px;}
   .wave-divider{position:absolute; bottom:-1px; left:0; width:100%; height:36px; display:block;}
+
   main{max-width:960px; margin:0 auto; padding:28px 20px 100px;}
+
   .date-row{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; margin-bottom:18px; border-bottom:1px solid var(--line);}
   .date-pill{flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:64px; border-radius:14px; border:1.5px solid var(--line); background:var(--white); color:var(--ink); transition:all .15s ease;}
   .date-pill .dow{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; opacity:0.65;}
   .date-pill .dnum{font-family:var(--font-display); font-size:22px; line-height:1.1; margin-top:2px;}
   .date-pill.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .date-pill:hover:not(.active){border-color:var(--bay-teal);}
+
   .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   h2.section-title{font-family:var(--font-display); font-size:26px; letter-spacing:0.5px; margin:0 0 4px;}
   p.section-sub{color:var(--ink-soft); font-size:14px; margin:0 0 12px;}
   .refresh-btn{background:none; border:1px solid var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; white-space:nowrap;}
   .refresh-btn:hover{background:var(--bay-teal-light);}
+
   .legend{display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin-bottom:16px; flex-wrap:wrap;}
   .legend .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle;}
   .dot.free{background:var(--bay-teal);}
@@ -64,6 +69,7 @@
   .dot.class{background:var(--class-color);}
   .dot.block{background:var(--block-color);}
   .dot.past{background:var(--past-ink);}
+
   .court-scroll{overflow:auto; max-height:560px; border-radius:16px; border:1px solid var(--line); background:var(--white);}
   .court-grid{display:grid; min-width:440px;}
   .court-head-row, .court-row{display:grid; grid-template-columns:74px repeat(var(--ncourts,2), 1fr);}
@@ -86,12 +92,15 @@
   .slot-taken.slot-block{background:var(--block-color);}
   .slot-taken-continue{opacity:.55;}
   .slot-past{width:100%; height:36px; border-radius:8px; background:var(--past); color:var(--past-ink); display:flex; align-items:center; justify-content:center; font-size:13px;}
+
   .class-row{display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:10px; flex-wrap:wrap;}
   .class-row-time{font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); width:96px; flex-shrink:0;}
   .class-row-info{flex:1; min-width:160px;}
   .class-row-info .who{font-weight:600; font-size:14px;}
   .class-row-info .meta{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+
   .empty-note{color:var(--ink-soft); font-size:14px; padding:30px 10px; text-align:center;}
+
   .overlay{position:fixed; inset:0; background:rgba(14,59,67,0.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50;}
   .modal{background:var(--white); border-radius:18px; padding:26px; width:100%; max-width:400px; max-height:90vh; overflow-y:auto;}
   .modal h3{font-family:var(--font-display); font-size:24px; margin:0 0 4px;}
@@ -131,6 +140,7 @@
   .btn-confirm:disabled{background:var(--line); color:var(--ink-soft); cursor:not-allowed;}
   .btn-cancel{background:none; border:none; color:var(--ink-soft); font-size:14px; padding:12px;}
   .error-text{color:var(--coral-dark); font-size:12px; margin-top:-8px; margin-bottom:12px;}
+
   .admin-login{max-width:300px; margin:40px auto; text-align:center;}
   .admin-login p{color:var(--ink-soft); font-size:13px; margin-bottom:16px;}
   .block-open-btn{background:none; border:1.5px dashed var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:9px 18px; font-size:13px; font-weight:700; margin-bottom:18px;}
@@ -146,6 +156,7 @@
   .wa-mini{background:#25D366; color:#fff; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;}
   .admin-danger{margin-top:26px; text-align:center;}
   .admin-danger button{background:none; border:1px dashed var(--ink-soft); color:var(--ink-soft); padding:8px 16px; border-radius:999px; font-size:12px;}
+
   .metrics-box{background:var(--white); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:18px;}
   .metrics-dates{display:flex; gap:10px; flex-wrap:wrap;}
   .metrics-dates .field{flex:1; min-width:140px;}
@@ -153,6 +164,7 @@
   .metrics-buttons button{background:none; border:1px solid var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700;}
   .metrics-buttons button:hover{background:var(--bay-teal-light);}
   .metrics-buttons button:disabled{opacity:0.6; cursor:not-allowed;}
+
   .history-item{display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:9px 4px; border-bottom:1px solid var(--line); font-size:13px;}
   .history-time{font-family:var(--font-mono); color:var(--ink-soft); width:52px; flex-shrink:0;}
   .history-badge{padding:3px 9px; border-radius:999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
@@ -162,18 +174,23 @@
   .history-detail{flex:1; min-width:160px;}
   .history-actor{color:var(--ink-soft); font-size:12px;}
   .panel-subhead{font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin:22px 0 10px;}
+
   #toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--white); padding:12px 22px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; transition:all .25s ease; pointer-events:none; z-index:100; max-width:88vw; text-align:center;}
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
   .wa-banner{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--white); border:1px solid var(--line); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:center; box-shadow:0 8px 24px rgba(14,59,67,0.18); z-index:60; max-width:92vw; flex-wrap:wrap;}
   .wa-btn{background:#25D366; color:#fff; padding:9px 16px; border-radius:999px; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap;}
   .wa-dismiss{background:none;border:none;color:var(--ink-soft);font-size:16px; padding:4px;}
+
   .loading-note{text-align:center; color:var(--ink-soft); padding:40px; font-family:var(--font-mono); font-size:13px;}
+
   @media (max-width:480px){
     .wordmark{font-size:32px;}
   }
 </style>
 </head>
 <body>
+
 <header>
   <div class="header-inner">
     <div class="brand">
@@ -191,14 +208,109 @@
     <path d="M0,18 C150,36 350,0 600,18 C850,36 1050,0 1200,18 L1200,36 L0,36 Z" fill="#FAF5E8"/>
   </svg>
 </header>
+
 <main id="app">
   <div class="loading-note">Cargando…</div>
 </main>
+
 <div id="toast"></div>
 <div id="waBannerWrap"></div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+   PUENTE DE ALMACENAMIENTO · Bahía Padel Social Club
+   Reemplaza el window.storage de los artefactos de Claude por
+   llamadas a /.netlify/functions/kv (que a su vez habla con Supabase).
+   El resto de la app no necesita ningún cambio: misma interfaz
+   get / set / delete / list.
+   ──────────────────────────────────────────────────────────────── */
+(function(){
+  var ENDPOINT  = "/.netlify/functions/kv";
+  var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
+  var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
+  var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
+
+  window.__appCode = null;
+  window.__appToken = null;
+  try { window.__appCode = localStorage.getItem(CODE_KEY); } catch(e){}
+  try { window.__appToken = localStorage.getItem(TOKEN_KEY); } catch(e){}
+
+  window.__setAppCode = function(c){
+    window.__appCode = c;
+    try { localStorage.setItem(CODE_KEY, c); } catch(e){}
+  };
+  // Cuando el servidor emite un token: lo guardamos y DEJAMOS de guardar el
+  // código en disco (el código queda solo en memoria de esta pestaña). Así el
+  // código no vive "para siempre" en el navegador y la sesión caduca sola.
+  window.__useSession = function(token){
+    if(!token) return;
+    window.__appToken = token;
+    try { localStorage.setItem(TOKEN_KEY, token); localStorage.removeItem(CODE_KEY); } catch(e){}
+  };
+  window.__clearAppCode = function(){
+    window.__appCode = null;
+    window.__appToken = null;
+    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); } catch(e){}
+  };
+
+  async function api(action, extra){
+    var body = Object.assign({ action: action, code: window.__appCode || "" }, extra || {});
+    if (window.__appToken) body.token = window.__appToken;
+    var r = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (r.status === 401){
+      // Un token caducado no debe reutilizarse; lo soltamos (el código en
+      // memoria, si lo hay, sigue sirviendo de respaldo en esta pestaña).
+      window.__appToken = null;
+      try { localStorage.removeItem(TOKEN_KEY); } catch(e){}
+      var err = new Error("Código no válido"); err.noAuth = true; throw err;
+    }
+    if (!r.ok){
+      var txt = "";
+      try { txt = (await r.json()).error || ""; } catch(e){}
+      throw new Error("Servidor " + r.status + (txt ? ": " + txt : ""));
+    }
+    return await r.json();
+  }
+  window.__api = api;
+
+  function sesionLeer(){
+    try { var v = localStorage.getItem(SESS_KEY); return v ? { key:"session-state", value:v } : null; }
+    catch(e){ return null; }
+  }
+
+  window.storage = {
+    get: async function(key, shared){
+      if (key === "session-state") return sesionLeer();
+      return await api("get", { key: key });
+    },
+    set: async function(key, value, shared){
+      if (key === "session-state"){
+        try { localStorage.setItem(SESS_KEY, value); } catch(e){}
+        return { key: key, value: value };
+      }
+      return await api("set", { key: key, value: value });
+    },
+    delete: async function(key, shared){
+      if (key === "session-state"){
+        try { localStorage.removeItem(SESS_KEY); } catch(e){}
+        return { key: key, deleted: true };
+      }
+      return await api("delete", { key: key });
+    },
+    list: async function(prefix, shared){
+      return await api("list", { prefix: prefix || "" });
+    }
+  };
+})();
+</script>
 <script>
 /* ---------- CONFIG ---------- */
 const COURTS = ['Cancha 1', 'Cancha 2'];
+
 function generateTimeSlots(startHour, endHour, stepMin){
   const slots = [];
   for(let t = startHour*60; t < endHour*60; t += stepMin){
@@ -211,25 +323,28 @@ function generateTimeSlots(startHour, endHour, stepMin){
 const OPEN_HOUR = 6;   // 6am
 const CLOSE_HOUR = 23; // 11pm
 const TIME_SLOTS = generateTimeSlots(OPEN_HOUR, CLOSE_HOUR, 30); // 06:00 .. 22:30, cierre 23:00
+
 const DURATIONS = [
   { slots:1, label:'30 min' },
   { slots:2, label:'60 min' },
   { slots:3, label:'90 min' },
   { slots:4, label:'120 min' },
 ];
+
 const TRAINERS = ['Tomás', 'Isaías'];
 const CLASS_BASE_RATE_PER_HOUR = 150000;
 const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
-// ---- Backend seguro (Netlify Function + Supabase) ------------------------------
-// El CÓDIGO DE ACCESO de la app ya NO vive aquí: se valida en el servidor
-// (variable de entorno APP_ACCESS_CODE en Netlify). El staff lo escribe en la
-// pantalla de entrada. Así nadie puede verlo mirando el código fuente.
-const KV_ENDPOINT = '/.netlify/functions/kv'; // proxy seguro hacia Supabase
-let accessToken = null;                        // código validado durante esta sesión
-const ADMIN_PIN = '0293';                      // PIN del Panel (cámbialo aquí si quieres)
+
+// ---- Códigos de acceso: cámbialos aquí por los que quieras usar en el club ----
+/* El código de entrada ya NO está aquí: lo valida el servidor contra la
+   variable APP_ACCESS_CODE de Netlify (ver netlify/functions/kv.js). */
+const ADMIN_PIN = '0293'; // OJO: sigue en el navegador, cualquiera puede verlo en el código fuente.
+                          // Pendiente de mover al servidor como se hizo con el código de entrada.
 // --------------------------------------------------------------------------------
+
 const DOW_LABELS = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const POLL_INTERVAL_MS = 20000; // refresco automático cada 20s
+
 const CANCHA_CSV_COLUMNS = [
   { label:'Tipo', get:r=>'Cancha' },
   { label:'Fecha', get:r=>r.date },
@@ -260,6 +375,7 @@ const CLASE_CSV_COLUMNS = [
   { label:'Precio final', get:r=>r.price },
   { label:'Comentario', get:r=>r.comment },
 ];
+
 /* ---------- STATE ---------- */
 let state = {
   dates: [],
@@ -276,53 +392,22 @@ let state = {
   trainerFilter: 'todos',
   appUnlocked: false,
 };
+
 let bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
 function resetBookingFlow(){
   bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
 }
+
 let blockForm = { court: COURTS[0], startDate:'', startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
 function resetBlockForm(){
   blockForm = { court: COURTS[0], startDate: fmtDate(state.selectedDate), startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
 }
+
 // Rango de fechas de Métricas y reportes: se guarda aquí (no en el HTML) para que
 // un re-render (refresco automático, editar/cancelar algo, etc.) nunca lo resetee.
 let metricsRange = { start:'', end:'' };
-let pollTimer = null;
 
-/* ---------- BACKEND: proxy seguro hacia Supabase ----------
-   Fuera de Claude, window.storage no existe. Aquí lo definimos nosotros:
-   - datos compartidos del club (shared=true)  -> función de Netlify -> Supabase
-   - datos locales de este equipo (shared=false) -> localStorage del navegador
-   El código de acceso (accessToken) se envía en cada petición y lo valida
-   la función en el servidor. */
-async function kvCall(op, key, value){
-  const res = await fetch(KV_ENDPOINT, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ op, key, value, accessCode: accessToken })
-  });
-  if(res.status===401){ const e = new Error('unauthorized'); e.code = 401; throw e; }
-  if(!res.ok) throw new Error('kv_error_' + res.status);
-  return res.json();
-}
-window.storage = {
-  async get(key, shared){
-    if(shared===false){
-      const v = localStorage.getItem('bp:' + key);
-      return v!==null ? { value:v } : null;
-    }
-    const data = await kvCall('get', key);
-    return (data && data.value!=null) ? { value:data.value } : null;
-  },
-  async set(key, value, shared){
-    if(shared===false){ localStorage.setItem('bp:' + key, value); return; }
-    await kvCall('set', key, value);
-  },
-  async delete(key, shared){
-    if(shared===false){ localStorage.removeItem('bp:' + key); return; }
-    await kvCall('delete', key);
-  }
-};
+let pollTimer = null;
 
 /* ---------- HELPERS ---------- */
 function fmtDate(d){
@@ -387,6 +472,7 @@ function discountFactor(courtesy){
   if(courtesy==='quarter') return 0.75;
   return 1;
 }
+
 /* ---------- PRECIOS ---------- */
 function courtSlotPrice(time){
   const [h,m] = time.split(':').map(Number);
@@ -413,6 +499,7 @@ function classPriceForRange(players, slots){
   const perHour = CLASS_BASE_RATE_PER_HOUR + CLASS_EXTRA_PERSON_PER_HOUR * Math.max(0, players-1);
   return perHour * hours;
 }
+
 /* ---------- WHATSAPP ---------- */
 function toWhatsAppNumber(phone){
   let digits = String(phone).replace(/\D/g,'');
@@ -422,12 +509,26 @@ function toWhatsAppNumber(phone){
 function buildWhatsAppLink(phone, message){
   return `https://wa.me/${toWhatsAppNumber(phone)}?text=${encodeURIComponent(message)}`;
 }
-function buildCourtWhatsAppMessage(name, court, dateStr, start, end){
-  return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club\nTe esperamos en cancha!`;
+/* Código de video: identificador corto y único que enlaza cada reserva con
+   la app de grabaciones. Alfabeto sin caracteres ambiguos (0/O, 1/I/L). */
+function nuevoCodigoVideo(){
+  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0;i<6;i++) s += abc[Math.floor(Math.random()*abc.length)];
+  // Se antepone una porción del tiempo para minimizar aún más las colisiones.
+  const t = Date.now().toString(36).slice(-2).toUpperCase();
+  return `BP-${t}${s}`;
 }
-function buildClaseWhatsAppMessage(name, trainer, court, dateStr, start, end, players){
-  return `Hola ${name}! Tu clase con ${trainer} en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nJugadores: ${players}\nPago: en el club\nTe esperamos!`;
+function lineaVideo(codigo){
+  return codigo ? `\nCódigo de video: ${codigo}` : '';
 }
+function buildCourtWhatsAppMessage(name, court, dateStr, start, end, codigoVideo){
+  return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos en cancha!`;
+}
+function buildClaseWhatsAppMessage(name, trainer, court, dateStr, start, end, players, codigoVideo){
+  return `Hola ${name}! Tu clase con ${trainer} en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nJugadores: ${players}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos!`;
+}
+
 /* ---------- CSV ---------- */
 function toCSV(rows, columns){
   const header = columns.map(c=>c.label).join(',');
@@ -442,7 +543,7 @@ function toCSV(rows, columns){
   return [header, ...lines].join('\n');
 }
 function downloadCSV(filename, csvContent){
-  const blob = new Blob(['﻿' + csvContent], { type:'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + csvContent], { type:'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -470,6 +571,7 @@ async function gatherRangeEntries(startDateStr, endDateStr, filterFn){
   results.sort((a,b)=> a.date===b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date));
   return results;
 }
+
 /* ---------- STORAGE: reservas / historial ---------- */
 async function loadCourtBookings(dateStr){
   try{
@@ -487,6 +589,23 @@ async function saveCourtBookings(dateStr, data){
   if(!window.storage) throw new Error('Almacenamiento no disponible');
   await window.storage.set(`cancha:${dateStr}`, JSON.stringify(data), true);
 }
+/* ---------- STORAGE: índice para la app de videos ----------
+   Cada reserva tiene un codigo_video. Guardamos una clave video:<codigo> que
+   apunta a los datos de esa reserva, para que la app de videos la resuelva con
+   una sola llamada (action:"get", key:"video:<codigo>"). Es best-effort: si
+   falla, la reserva ya quedó guardada y no se rompe nada. */
+async function saveVideoIndex(codigo, info){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.set(`video:${codigo}`, JSON.stringify(info), true);
+  }catch(e){ console.warn('No se pudo indexar el código de video', e); }
+}
+async function deleteVideoIndex(codigo){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.delete(`video:${codigo}`, true);
+  }catch(e){ console.warn('No se pudo borrar el índice de video', e); }
+}
 async function appendHistory(dateStr, event){
   const hist = await loadHistory(dateStr);
   hist.push(event);
@@ -494,6 +613,7 @@ async function appendHistory(dateStr, event){
   await window.storage.set(`historial:${dateStr}`, JSON.stringify(hist), true);
   return hist;
 }
+
 /* ---------- STORAGE: directorio de clientes ---------- */
 async function loadClients(){
   try{
@@ -516,6 +636,7 @@ async function upsertClient(nombre, apellido, phone, email){
   await saveClients(list);
   state.clients = list;
 }
+
 async function loadDateData(){
   state.loading = true; render();
   const dateStr = fmtDate(state.selectedDate);
@@ -525,6 +646,7 @@ async function loadDateData(){
   state.loading = false;
   render();
 }
+
 /* ---------- ACTUALIZACIÓN AUTOMÁTICA ENTRE EQUIPOS ---------- */
 function startPolling(){
   if(pollTimer) return;
@@ -545,6 +667,7 @@ async function manualRefresh(){
   await loadDateData();
   showToast('Actualizado.');
 }
+
 /* ---------- ACCIONES: navegación ---------- */
 async function selectDate(d){ state.selectedDate = d; await loadDateData(); }
 function selectTab(tab){ state.tab = tab; render(); }
@@ -574,6 +697,7 @@ function openBlockModal(){
   render();
 }
 function closeModal(){ state.modal = null; render(); }
+
 /* ---------- ACCIÓN: reservar (unificada cancha/clase) ---------- */
 async function confirmSlotBooking(time, court, flow, name, phone, email, comment){
   const dateStr = fmtDate(state.selectedDate);
@@ -592,6 +716,7 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
     return;
   }
   const endTime = computeEndTime(time, flow.duration);
+
   if(flow.bookingType==='clase'){
     const overlap = Object.values(latest).some(b=>
       b && (b.bookingType||'cancha')==='clase' && b.trainer===flow.trainer &&
@@ -603,20 +728,31 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
       return;
     }
   }
+
   const groupId = `${dateStr}-${court}-${time}-${Date.now()}`;
   const courtesy = flow.courtesy || 'none';
   const listPrice = flow.bookingType==='cancha'
     ? courtPriceForRange(time, flow.duration)
     : classPriceForRange(flow.players, flow.duration);
   const price = listPrice * discountFactor(courtesy);
+  const codigoVideo = nuevoCodigoVideo();
   const bookingInfo = {
     bookingType: flow.bookingType, name, phone, email, comment: comment||'', courtesy, ts:Date.now(), groupId,
     startTime:time, endTime, court, price, listPrice,
+    codigo_video: codigoVideo,
     trainer: flow.bookingType==='clase' ? flow.trainer : undefined,
     players: flow.bookingType==='clase' ? flow.players : undefined,
   };
   slotsNeeded.forEach(t => { latest[`${t}|${court}`] = bookingInfo; });
+
   await saveCourtBookings(dateStr, latest);
+  // Índice inverso para la app de videos: video:<codigo> -> datos de la reserva.
+  await saveVideoIndex(codigoVideo, {
+    codigo_video: codigoVideo, fecha: dateStr, court, startTime: time, endTime,
+    bookingType: flow.bookingType, groupId, name, phone,
+    trainer: bookingInfo.trainer, players: bookingInfo.players,
+  });
+
   state.courtBookings = latest;
   const courtesyTxt = courtesy!=='none' ? ' (cortesía)' : '';
   const detalle = flow.bookingType==='cancha'
@@ -625,13 +761,15 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
   try{
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:flow.bookingType, detalle, actor: state.staffName || name, source:'cliente' });
   }catch(e){ console.warn('No se pudo registrar el historial', e); }
+
   const msg = flow.bookingType==='cancha'
-    ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime)
-    : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players);
+    ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
+    : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
   state.lastConfirmation = { phone, message: msg };
-  showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime}` : `¡Clase confirmada con ${flow.trainer}!`);
+  showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
 }
+
 /* ---------- ACCIÓN: crear bloqueo recurrente ---------- */
 async function createRecurringBlock(title, court, startDateStr, startTime, durationSlots, recurrence, occurrences){
   const staff = state.staffName || 'Staff';
@@ -641,8 +779,10 @@ async function createRecurringBlock(title, court, startDateStr, startTime, durat
   const courtsToBlock = court==='__all__' ? COURTS : [court];
   const [sy,sm,sd] = startDateStr.split('-').map(Number);
   const baseDate = new Date(sy, sm-1, sd);
+
   let created = 0;
   const skippedDates = [];
+
   for(let i=0;i<count;i++){
     const occDate = new Date(baseDate);
     if(intervalDays) occDate.setDate(occDate.getDate() + i*intervalDays);
@@ -659,6 +799,7 @@ async function createRecurringBlock(title, court, startDateStr, startTime, durat
       slotsNeeded.forEach(t=>{ if(latest[`${t}|${c}`]) anyConflict = true; });
     });
     if(anyConflict){ skippedDates.push(dateStr); continue; }
+
     const endTime = computeEndTime(startTime, durationSlots);
     const groupIdBase = `${dateStr}-${startTime}-${Date.now()}-${i}`;
     courtsToBlock.forEach(c=>{
@@ -670,6 +811,7 @@ async function createRecurringBlock(title, court, startDateStr, startTime, durat
       };
       slotsNeeded.forEach(t=>{ latest[`${t}|${c}`] = info; });
     });
+
     try{
       await saveCourtBookings(dateStr, latest);
       created++;
@@ -708,6 +850,7 @@ async function cancelSeries(seriesId, seriesMeta){
   }
   return removed;
 }
+
 /* ---------- ACCIONES: editar / cancelar (panel) ---------- */
 function labelForBooking(b){
   const type = b.bookingType || 'cancha';
@@ -720,6 +863,7 @@ async function editBooking(groupId, newName, newPhone, newEmail, newComment, new
   const dateStr = fmtDate(state.selectedDate);
   const latest = await loadCourtBookings(dateStr);
   let detalle = '';
+  let ref = null;
   Object.keys(latest).forEach(key=>{
     const b = latest[key];
     if(b && b.groupId===groupId){
@@ -727,9 +871,21 @@ async function editBooking(groupId, newName, newPhone, newEmail, newComment, new
       const newPrice = listPrice * discountFactor(newCourtesy);
       if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime}: ${b.name} → ${newName}`;
       latest[key] = { ...b, name:newName, phone:newPhone, email:newEmail, comment:newComment, courtesy:newCourtesy, listPrice, price:newPrice };
+      ref = latest[key];
     }
   });
+
   await saveCourtBookings(dateStr, latest);
+  // Mantener sincronizado el índice de la app de videos con los nuevos datos.
+  if(ref && ref.codigo_video){
+    await saveVideoIndex(ref.codigo_video, {
+      codigo_video: ref.codigo_video, fecha: dateStr, court: ref.court,
+      startTime: ref.startTime, endTime: ref.endTime, bookingType: ref.bookingType,
+      groupId: ref.groupId, name: ref.name, phone: ref.phone,
+      trainer: ref.trainer, players: ref.players,
+    });
+  }
+
   state.courtBookings = latest;
   try{
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'reserva', detalle, actor:staff, source:'panel' });
@@ -749,7 +905,9 @@ async function editBlockTitle(groupId, newTitle){
       latest[key] = { ...b, title:newTitle };
     }
   });
+
   await saveCourtBookings(dateStr, latest);
+
   state.courtBookings = latest;
   try{
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'bloqueo', detalle, actor:staff, source:'panel' });
@@ -762,15 +920,18 @@ async function cancelGroup(groupId){
   const dateStr = fmtDate(state.selectedDate);
   const latest = await loadCourtBookings(dateStr);
   let detalle = '';
+  const codigosVideo = new Set();
   Object.keys(latest).forEach(key=>{
     const b = latest[key];
     if(b && b.groupId === groupId){
       if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime} (${b.name})`;
+      if(b.codigo_video) codigosVideo.add(b.codigo_video);
       delete latest[key];
     }
   });
   try{
     await saveCourtBookings(dateStr, latest);
+    for(const cv of codigosVideo){ await deleteVideoIndex(cv); }
     state.courtBookings = latest;
     try{
       state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
@@ -782,15 +943,17 @@ async function cancelGroup(groupId){
   render();
 }
 /* ---------- SESIÓN: sobrevivir a recargas de la página ----------
-   Guardamos un poco de estado (si la app está desbloqueada, el nombre del
-   usuario, y el código de acceso ya validado) en localStorage de ESTE equipo,
-   para no tener que reescribir el código cada vez que se recarga la página.
-   Es almacenamiento local del navegador: no viaja a Supabase. */
+   No podemos usar localStorage/sessionStorage (prohibido en artefactos de Claude),
+   así que usamos el almacenamiento propio de Claude en modo "personal" (shared:false).
+   Si el navegador recarga la página, esto evita tener que reescribir los códigos
+   cada vez. No hay garantía absoluta de que persista siempre (depende de cómo
+   Claude relacione el almacenamiento personal con tu sesión/navegador), pero
+   como mucho no hace nada — nunca empeora lo que ya había. */
 async function saveSessionState(){
   try{
     if(!window.storage) return;
     await window.storage.set('session-state', JSON.stringify({
-      appUnlocked: state.appUnlocked, isAdmin: state.isAdmin, staffName: state.staffName, accessToken
+      appUnlocked: state.appUnlocked, isAdmin: state.isAdmin, staffName: state.staffName
     }), false);
   }catch(e){ /* no es crítico si falla */ }
 }
@@ -799,14 +962,14 @@ async function trySessionRestore(){
     const res = await window.storage.get('session-state', false);
     if(!res) return;
     const data = JSON.parse(res.value);
-    if(data.accessToken) accessToken = data.accessToken;
-    if(data.appUnlocked && accessToken) state.appUnlocked = true;
+    if(data.appUnlocked) state.appUnlocked = true;
     if(data.isAdmin){ state.isAdmin = true; state.staffName = data.staffName || 'Staff'; }
   }catch(e){ /* no había sesión guardada */ }
 }
 async function clearSessionState(){
   try{ if(window.storage) await window.storage.delete('session-state', false); }catch(e){}
 }
+
 function tryAdminLogin(pin, name){
   if(pin === ADMIN_PIN){
     state.isAdmin = true; state.staffName = name || 'Staff';
@@ -815,6 +978,7 @@ function tryAdminLogin(pin, name){
   }
   else { showToast('PIN incorrecto.'); }
 }
+
 /* ---------- RENDER: CANDADO DE LA APP ---------- */
 function renderLockScreen(){
   document.getElementById('tabsNav').innerHTML = '';
@@ -834,26 +998,25 @@ function renderLockScreen(){
   const userInput = document.getElementById('appUserInput');
   const input = document.getElementById('appCodeInput');
   const tryUnlock = async ()=>{
-    const code = input.value;
-    if(!code){ showToast('Escribe el código de acceso.'); return; }
-    if(submit){ submit.disabled = true; submit.textContent = 'Verificando…'; }
-    let ok = false;
+    const intento = (input.value || '').trim();
+    if(!intento){ showToast('Escribe el código.'); return; }
+    if(submit){ submit.disabled = true; submit.textContent = 'Comprobando…'; }
     try{
-      const res = await fetch(KV_ENDPOINT, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ op:'ping', accessCode: code })
-      });
-      if(res.status===401){ showToast('Código incorrecto.'); }
-      else if(!res.ok){ showToast('Error de conexión con el servidor. Intenta de nuevo.'); }
-      else { ok = true; }
-    }catch(e){
-      showToast('Sin conexión con el servidor.');
-    }finally{
+      window.__setAppCode(intento);
+      await window.__api('auth', {});
+      // Si el servidor tiene SESSION_SECRET, cambiamos el código por un token
+      // con caducidad. Si no, seguimos con el código como hasta ahora.
+      try{
+        const ses = await window.__api('login', {});
+        if(ses && ses.token){ window.__useSession(ses.token); }
+      }catch(e){ /* sin token: se sigue usando el código */ }
+    }catch(err){
+      window.__clearAppCode();
+      showToast(err && err.noAuth ? 'Código incorrecto.' : ('No se pudo conectar. ' + (err.message||'')));
       if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
+      return;
     }
-    if(!ok) return;
-    accessToken = code;
+    if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
     state.appUnlocked = true;
     state.staffName = userInput.value.trim() || 'Usuario';
     await saveSessionState();
@@ -866,6 +1029,7 @@ function renderLockScreen(){
   if(input) input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
   if(userInput) userInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
 }
+
 /* ---------- RENDER: NAV ---------- */
 function renderNav(){
   const nav = document.getElementById('tabsNav');
@@ -880,12 +1044,13 @@ function renderNav(){
   if(lockBtn) lockBtn.addEventListener('click', ()=>{
     state.appUnlocked = false;
     state.isAdmin = false;
-    accessToken = null;
     stopPolling();
     clearSessionState();
+    if(window.__clearAppCode) window.__clearAppCode();
     render();
   });
 }
+
 /* ---------- RENDER: DATE PILLS ---------- */
 function renderDatePills(){
   return `<div class="date-row" id="dateRow">
@@ -902,6 +1067,7 @@ function bindDatePills(){
     btn.addEventListener('click', ()=> selectDate(state.dates[Number(btn.dataset.idx)]));
   });
 }
+
 /* ---------- RENDER: CANCHA TAB ---------- */
 function renderCanchaTab(){
   const rows = TIME_SLOTS.map(time => `
@@ -929,6 +1095,7 @@ function renderCanchaTab(){
       }).join('')}
     </div>
   `).join('');
+
   return `
     <div class="section-head">
       <div>
@@ -969,6 +1136,7 @@ function bindCanchaTab(){
   const refreshBtn = document.getElementById('refreshBtn');
   if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
 }
+
 /* ---------- RENDER: CLASES TAB (solo consulta, agenda de entrenadores) ---------- */
 function renderClasesTab(){
   const dateStr = fmtDate(state.selectedDate);
@@ -982,6 +1150,7 @@ function renderClasesTab(){
   });
   allClasses.sort((a,b)=> a.startTime.localeCompare(b.startTime));
   const filtered = state.trainerFilter==='todos' ? allClasses : allClasses.filter(c=>c.trainer===state.trainerFilter);
+
   const listHtml = filtered.length===0
     ? `<div class="empty-note">Sin clases programadas ${state.trainerFilter==='todos'?'':'para '+esc(state.trainerFilter)+' '}el ${dateStr}.</div>`
     : filtered.map(c=>`
@@ -991,9 +1160,10 @@ function renderClasesTab(){
           <div class="who">${esc(c.trainer)} <span class="type-tag clase">Clase</span></div>
           <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · 📝 '+esc(c.comment) : ''}</div>
         </div>
-        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players))}" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     `).join('');
+
   return `
     <div class="section-head">
       <div>
@@ -1020,6 +1190,7 @@ function bindClasesTab(){
   const refreshBtn = document.getElementById('refreshBtn');
   if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
 }
+
 /* ---------- RENDER: PANEL (ADMIN) ---------- */
 function renderHistory(){
   const items = [...state.history].sort((a,b)=>b.ts-a.ts);
@@ -1059,6 +1230,7 @@ function renderPanelTab(){
   entries.sort((a,b)=> a.startTime.localeCompare(b.startTime));
   window.__adminAll = entries;
   const totalRevenue = entries.reduce((sum,e)=> sum + (e.price||0), 0);
+
   const listHtml = entries.length===0
     ? `<div class="empty-note">Sin reservas para el ${dateStr}.</div>`
     : entries.map((e,i)=>{
@@ -1067,11 +1239,11 @@ function renderPanelTab(){
         if(type==='cancha'){
           label = `${e.court} · ${e.startTime}–${e.endTime}`;
           metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
-          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildCourtWhatsAppMessage(e.name, e.court, dateStr, e.startTime, e.endTime))}" target="_blank" rel="noopener">WhatsApp</a>`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildCourtWhatsAppMessage(e.name, e.court, dateStr, e.startTime, e.endTime, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
         } else if(type==='clase'){
           label = `Clase con ${e.trainer} · ${e.court} · ${e.startTime}–${e.endTime} · ${e.players}p`;
           metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
-          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildClaseWhatsAppMessage(e.name, e.trainer, e.court, dateStr, e.startTime, e.endTime, e.players))}" target="_blank" rel="noopener">WhatsApp</a>`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildClaseWhatsAppMessage(e.name, e.trainer, e.court, dateStr, e.startTime, e.endTime, e.players, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
         } else {
           label = `${e.court} · ${e.startTime}–${e.endTime}`;
           metaLine = `${esc(label)} · Bloqueado por ${esc(e.name)}`;
@@ -1095,6 +1267,7 @@ function renderPanelTab(){
           </div>
         </div>`;
       }).join('');
+
   return `
     <div class="section-head">
       <div>
@@ -1105,6 +1278,7 @@ function renderPanelTab(){
     </div>
     ${renderDatePills()}
     <button class="block-open-btn" id="openBlockBtn">+ Crear bloqueo recurrente</button>
+
     <div class="panel-subhead">Métricas y reportes</div>
     <div class="metrics-box">
       <div class="metrics-dates">
@@ -1117,6 +1291,7 @@ function renderPanelTab(){
         <button id="exportCanchaBtn">⬇ Reservas de cancha (CSV)</button>
       </div>
     </div>
+
     <div class="panel-subhead">Reservas del día</div>
     ${listHtml}
     <div class="panel-subhead">Historial de movimientos</div>
@@ -1136,6 +1311,7 @@ function bindPanelTab(){
   if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
   const openBlockBtn = document.getElementById('openBlockBtn');
   if(openBlockBtn) openBlockBtn.addEventListener('click', openBlockModal);
+
   document.querySelectorAll('[data-admin-idx]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const e = window.__adminAll[Number(btn.dataset.adminIdx)];
@@ -1158,6 +1334,7 @@ function bindPanelTab(){
       await loadDateData();
     });
   });
+
   const metricsStart = document.getElementById('metricsStart');
   const metricsEnd = document.getElementById('metricsEnd');
   if(metricsStart) metricsStart.addEventListener('change', ()=>{ metricsRange.start = metricsStart.value; });
@@ -1191,7 +1368,9 @@ function bindPanelTab(){
   if(exportIsaiasBtn) exportIsaiasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Isaías', CLASE_CSV_COLUMNS, 'clases-Isaias', exportIsaiasBtn));
   const exportCanchaBtn = document.getElementById('exportCanchaBtn');
   if(exportCanchaBtn) exportCanchaBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='cancha', CANCHA_CSV_COLUMNS, 'reservas-cancha', exportCanchaBtn));
+
 }
+
 /* ---------- RENDER: CONTENIDO DEL MODAL ---------- */
 function renderTypeStep(m){
   return `
@@ -1283,7 +1462,11 @@ function renderFormStep(m){
       <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
     </div>
     <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" placeholder="Ej. Gómez"></div>
-    <div class="field"><label for="phoneInput">Teléfono / WhatsApp</label><input type="tel" id="phoneInput" placeholder="Ej. 300 123 4567"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" placeholder="Ej. 300 123 4567" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
     <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" placeholder="Ej. laura@correo.com"></div>
     <div class="field"><label for="commentInput">Comentario (opcional)</label><input type="text" id="commentInput" placeholder="Ej. cumpleaños, trae su raqueta..."></div>
     ${courtesyBlock}
@@ -1312,7 +1495,11 @@ function renderEditStep(m){
       <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
     </div>
     <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" value="${esc(prefillApellido)}"></div>
-    <div class="field"><label for="phoneInput">Teléfono / WhatsApp</label><input type="tel" id="phoneInput" value="${esc(m.prefillPhone||'')}"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" value="${esc(m.prefillPhone||'')}" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
     <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" value="${esc(m.prefillEmail||'')}"></div>
     <div class="field"><label for="commentInput">Comentario</label><input type="text" id="commentInput" value="${esc(m.prefillComment||'')}"></div>
     <div class="field"><label>Cortesía</label><div class="duration-options">
@@ -1396,36 +1583,58 @@ function updateModalDOM(){
 function bindClientAutocomplete(){
   const nameInputEl = document.getElementById('nameInput');
   const suggestBox = document.getElementById('clientSuggestions');
-  if(!nameInputEl || !suggestBox) return;
-  nameInputEl.addEventListener('input', ()=>{
-    const q = nameInputEl.value.trim().toLowerCase();
-    if(q.length < 2){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
-    const matches = (state.clients||[]).filter(c => (c.nombre||'').toLowerCase().startsWith(q)).slice(0,6);
-    if(matches.length===0){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
-    suggestBox.innerHTML = matches.map((c,idx)=>`
+  const phoneInputEl = document.getElementById('phoneInput');
+  const suggestBoxPhone = document.getElementById('clientSuggestionsPhone');
+
+  function fillFromClient(c){
+    if(nameInputEl) nameInputEl.value = c.nombre || '';
+    const apEl = document.getElementById('apellidoInput'); if(apEl) apEl.value = c.apellido||'';
+    if(phoneInputEl) phoneInputEl.value = c.phone||'';
+    const emEl = document.getElementById('emailInput'); if(emEl) emEl.value = c.email||'';
+  }
+  function renderSuggestions(box, matches){
+    if(matches.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+    box.innerHTML = matches.map((c,idx)=>`
       <div class="client-suggestion-item" data-suggest-idx="${idx}">
         <div class="csi-name">${esc(c.nombre)} ${esc(c.apellido||'')}</div>
         <div class="csi-phone">${esc(c.phone||'')}</div>
       </div>
     `).join('');
-    suggestBox.style.display = 'block';
-    suggestBox.querySelectorAll('[data-suggest-idx]').forEach(item=>{
+    box.style.display = 'block';
+    box.querySelectorAll('[data-suggest-idx]').forEach(item=>{
       item.addEventListener('click', ()=>{
-        const c = matches[Number(item.dataset.suggestIdx)];
-        nameInputEl.value = c.nombre;
-        const apEl = document.getElementById('apellidoInput'); if(apEl) apEl.value = c.apellido||'';
-        const phEl = document.getElementById('phoneInput'); if(phEl) phEl.value = c.phone||'';
-        const emEl = document.getElementById('emailInput'); if(emEl) emEl.value = c.email||'';
-        suggestBox.style.display = 'none'; suggestBox.innerHTML='';
+        fillFromClient(matches[Number(item.dataset.suggestIdx)]);
+        box.style.display = 'none'; box.innerHTML='';
       });
     });
-  });
-  nameInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBox.style.display='none'; }, 150); });
+  }
+
+  if(nameInputEl && suggestBox){
+    nameInputEl.addEventListener('input', ()=>{
+      const q = nameInputEl.value.trim().toLowerCase();
+      if(q.length < 2){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.nombre||'').toLowerCase().startsWith(q)).slice(0,6);
+      renderSuggestions(suggestBox, matches);
+    });
+    nameInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBox.style.display='none'; }, 150); });
+  }
+
+  if(phoneInputEl && suggestBoxPhone){
+    phoneInputEl.addEventListener('input', ()=>{
+      const q = phoneInputEl.value.replace(/\D/g,'');
+      if(q.length < 3){ suggestBoxPhone.style.display='none'; suggestBoxPhone.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.phone||'').replace(/\D/g,'').includes(q)).slice(0,6);
+      renderSuggestions(suggestBoxPhone, matches);
+    });
+    phoneInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBoxPhone.style.display='none'; }, 150); });
+  }
 }
 function bindModalContent(){
   const cancelBtn = document.getElementById('modalCancel');
   if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
   bindClientAutocomplete();
+
   const backBtn = document.getElementById('backBtn');
   if(backBtn){
     backBtn.addEventListener('click', ()=>{
@@ -1434,6 +1643,7 @@ function bindModalContent(){
       updateModalDOM();
     });
   }
+
   document.querySelectorAll('[data-booking-type]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       bookingFlow.bookingType = btn.dataset.bookingType;
@@ -1441,6 +1651,7 @@ function bindModalContent(){
       updateModalDOM();
     });
   });
+
   document.querySelectorAll('.dur-pill').forEach(p=>{
     p.addEventListener('click', ()=>{
       const input = p.querySelector('input');
@@ -1462,6 +1673,7 @@ function bindModalContent(){
       updateModalDOM();
     });
   });
+
   const toFormBtn = document.getElementById('toFormBtn');
   if(toFormBtn){
     toFormBtn.addEventListener('click', ()=>{
@@ -1469,6 +1681,7 @@ function bindModalContent(){
       updateModalDOM();
     });
   }
+
   const legalDatos = document.getElementById('legalDatos');
   const legalExoneracion = document.getElementById('legalExoneracion');
   if(legalDatos && legalExoneracion){
@@ -1476,6 +1689,7 @@ function bindModalContent(){
     legalDatos.addEventListener('change', sync);
     legalExoneracion.addEventListener('change', sync);
   }
+
   const confirmBtn = document.getElementById('modalConfirm');
   if(confirmBtn){
     confirmBtn.addEventListener('click', async ()=>{
@@ -1483,6 +1697,7 @@ function bindModalContent(){
       const errEl = document.getElementById('modalError');
       if(errEl) errEl.style.display = 'none';
       const original = confirmBtn.textContent;
+
       if(m.type==='court-flow'){
         const nombre = document.getElementById('nameInput').value.trim();
         const apellido = document.getElementById('apellidoInput').value.trim();
@@ -1505,6 +1720,7 @@ function bindModalContent(){
           await upsertClient(nombre, apellido, phone, email);
           render();
         }catch(err){ showToast('No se pudo guardar. Revisa tu conexión e intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
       } else if(m.type==='edit'){
         const nombre = document.getElementById('nameInput').value.trim();
         const apellido = document.getElementById('apellidoInput').value.trim();
@@ -1525,6 +1741,7 @@ function bindModalContent(){
           await upsertClient(nombre, apellido, phone, email);
           render();
         }catch(err){ showToast('No se pudo guardar. Intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
       } else if(m.type==='edit-block'){
         const title = document.getElementById('titleInput').value.trim();
         if(!title){
@@ -1537,6 +1754,7 @@ function bindModalContent(){
       }
     });
   }
+
   const createBlockBtn = document.getElementById('createBlockBtn');
   if(createBlockBtn){
     createBlockBtn.addEventListener('click', async ()=>{
@@ -1579,6 +1797,7 @@ function bindModal(){
   overlay.addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
   bindModalContent();
 }
+
 /* ---------- RENDER: BANNER WHATSAPP ---------- */
 function renderConfirmBanner(){
   if(!state.lastConfirmation) return '';
@@ -1588,6 +1807,7 @@ function renderConfirmBanner(){
     <button class="wa-dismiss" id="waDismiss">✕</button>
   </div>`;
 }
+
 /* ---------- RENDER PRINCIPAL ---------- */
 function render(){
   if(!state.appUnlocked){ renderLockScreen(); return; }
@@ -1600,22 +1820,39 @@ function render(){
     if(state.tab==='cancha') html = renderCanchaTab();
     else if(state.tab==='clases') html = renderClasesTab();
     else html = renderPanelTab();
+
     app.innerHTML = html + renderModal();
+
     bindDatePills();
     if(state.tab==='cancha') bindCanchaTab();
     else if(state.tab==='clases') bindClasesTab();
     else bindPanelTab();
     bindModal();
   }
+
   const bannerWrap = document.getElementById('waBannerWrap');
   bannerWrap.innerHTML = renderConfirmBanner();
   const dismissBtn = document.getElementById('waDismiss');
   if(dismissBtn) dismissBtn.addEventListener('click', ()=>{ state.lastConfirmation=null; render(); });
 }
+
 /* ---------- INIT ---------- */
 (async function init(){
   initDates();
   await trySessionRestore();
+  // Validamos la sesión restaurada contra el servidor: si el token caducó (o el
+  // código ya no vale), volvemos a la pantalla de entrada en vez de mostrar
+  // datos vacíos. Solo un 401 fuerza el bloqueo; un fallo de red no.
+  if(state.appUnlocked){
+    try{ await window.__api('auth', {}); }
+    catch(err){
+      if(err && err.noAuth){
+        state.appUnlocked = false; state.isAdmin = false;
+        await clearSessionState();
+        if(window.__clearAppCode) window.__clearAppCode();
+      }
+    }
+  }
   render();
   if(state.appUnlocked){
     state.clients = await loadClients();
