@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bahía Padel — Premios y Reactivación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bay-deep:#0E3B43;--bay-deep-2:#123F49;--bay-teal:#1F9E92;--sand:#F3E9D2;--sand-light:#FAF5E8;
+--coral:#FF6A4D;--coral-dark:#E14E30;--ok:#2E9E6B;--ok-bg:#E4F5EC;--canj:#2C63B8;--canj-bg:#E7EFFB;
+--danger:#C0432B;--danger-bg:#FBE7E2;--ink:#14282B;--ink-soft:#4B6167;--line:rgba(20,40,43,.14);
+--fd:'Bebas Neue',sans-serif;--fb:'Work Sans',sans-serif;--fm:'Space Mono',monospace;}
+*{box-sizing:border-box;}body{margin:0;font-family:var(--fb);background:var(--sand-light);color:var(--ink);}
+header{background:linear-gradient(160deg,var(--bay-deep),var(--bay-deep-2));padding:20px;}
+.hi{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.wm{font-family:var(--fd);font-size:34px;letter-spacing:1.5px;color:#fff;line-height:1;}
+.tag{font-family:var(--fm);font-size:11px;color:#9FD4CC;text-transform:uppercase;margin-top:5px;}
+.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#DCEFEC;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;}
+main{max-width:900px;margin:0 auto;padding:20px;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.tab{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-soft);cursor:pointer;}
+.tab.active{background:var(--bay-deep);color:#fff;border-color:var(--bay-deep);}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
+h2{font-family:var(--fd);letter-spacing:1px;font-size:24px;color:var(--bay-deep);margin:0 0 4px;}
+.sub{color:var(--ink-soft);font-size:13px;margin:0 0 16px;}
+input,select,textarea{font-family:var(--fb);font-size:15px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--sand-light);color:var(--ink);width:100%;}
+input.mono{font-family:var(--fm);letter-spacing:1px;text-transform:uppercase;}
+textarea{min-height:96px;resize:vertical;}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.btn{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-weight:700;font-size:15px;padding:11px 18px;white-space:nowrap;}
+.btn-primary{background:var(--bay-teal);color:#fff;}.btn-primary:hover{background:#178578;}
+.btn-coral{background:var(--coral);color:#fff;}.btn-coral:hover{background:var(--coral-dark);}
+.btn-wa{background:#25D366;color:#08331d;font-weight:700;}
+.badge{display:inline-flex;gap:6px;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;}
+.b-ok{background:var(--ok-bg);color:var(--ok);}.b-canj{background:var(--canj-bg);color:var(--canj);}.b-venc{background:var(--danger-bg);color:var(--danger);}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);}
+th{color:var(--ink-soft);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;}
+.kpi{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 4px;}
+.kpi div{background:var(--sand-light);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:120px;}
+.kpi b{font-family:var(--fd);font-size:28px;color:var(--bay-deep);display:block;letter-spacing:1px;}
+.kpi span{font-size:12px;color:var(--ink-soft);}
+.hide{display:none;}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--bay-deep);color:#fff;padding:12px 18px;border-radius:11px;font-weight:600;opacity:0;transition:.25s;z-index:9;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.small{font-size:12px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<header><div class="hi">
+  <div><div class="wm">BAHÍA PADEL</div><div class="tag">Premios · Reactivación</div></div>
+  <div class="chip" id="userChip">Recepción</div>
+</div></header>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+const ENDPOINT = "/.netlify/functions/loyalty";
+let CODE = null;           // código de staff (en memoria)
+let staffName = "Recepción";
+let tab = "recepcion";
+
+async function api(action, extra){
+  const r = await fetch(ENDPOINT, {method:"POST",headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(Object.assign({action, code: CODE||""}, extra||{}))});
+  if(r.status===401){ CODE=null; throw new Error("Código incorrecto"); }
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error || ("Error "+r.status));
+  return j;
+}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function mesActual(){const d=new Date(Date.now()-5*3600*1000);return d.toISOString().slice(0,7);}
+function trimestreActual(){const d=new Date(Date.now()-5*3600*1000);const q=Math.floor(d.getUTCMonth()/3)+1;return d.getUTCFullYear()+"-Q"+q;}
+
+/* ── Login ── */
+function renderLogin(){
+  document.getElementById("main").innerHTML = `
+  <div class="card" style="max-width:420px;margin:40px auto;">
+    <h2>Acceso de staff</h2>
+    <p class="sub">Ingresa tu nombre y el código de acceso del club.</p>
+    <div style="margin-bottom:10px"><input id="nm" placeholder="Tu nombre (ej. Sary)"></div>
+    <div style="margin-bottom:14px"><input id="cd" type="password" placeholder="Código de acceso"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="entrar()">Entrar</button>
+  </div>`;
+  document.getElementById("cd").addEventListener("keydown",e=>{if(e.key==="Enter")entrar();});
+}
+async function entrar(){
+  CODE = (document.getElementById("cd").value||"").trim();
+  staffName = (document.getElementById("nm").value||"").trim() || "Recepción";
+  try{ await api("auth"); document.getElementById("userChip").textContent = "Recepción · "+staffName; render(); }
+  catch(e){ CODE=null; toast(e.message); }
+}
+
+/* ── Shell ── */
+function render(){
+  if(!CODE){ renderLogin(); return; }
+  const tabsHtml = [["recepcion","Recepción / Canje"],["reporte","Reporte de premios"],["campanas","Campañas"],["repcamp","Reporte de campaña"]]
+    .map(([id,l])=>`<div class="tab ${tab===id?'active':''}" onclick="setTab('${id}')">${l}</div>`).join("");
+  document.getElementById("main").innerHTML = `<div class="tabs">${tabsHtml}</div><div id="view"></div>`;
+  ({recepcion:viewRecepcion,reporte:viewReporte,campanas:viewCampanas,repcamp:viewRepCamp}[tab])();
+}
+function setTab(t){ tab=t; render(); }
+
+/* ── 1) Recepción / Canje ── */
+function viewRecepcion(){
+  document.getElementById("view").innerHTML = `
+  <div class="card">
+    <h2>Buscar premio</h2>
+    <p class="sub">Escribe el código que el cliente recibió por WhatsApp y márcalo como canjeado.</p>
+    <div class="row"><input id="cod" class="mono" placeholder="AAAAMM-####" style="flex:1">
+      <button class="btn btn-primary" onclick="buscar()">Buscar</button></div>
+    <div id="res"></div>
+  </div>`;
+  document.getElementById("cod").addEventListener("keydown",e=>{if(e.key==="Enter")buscar();});
+}
+async function buscar(){
+  const cod=(document.getElementById("cod").value||"").trim().toUpperCase();
+  if(!cod){toast("Escribe el código");return;}
+  try{
+    const {premio:p} = await api("premios.buscar",{codigo_unico:cod});
+    const box=document.getElementById("res");
+    if(!p){ box.innerHTML=`<p class="sub" style="margin-top:16px">No se encontró ningún premio con ese código.</p>`; return; }
+    const vencido = p.estado==="vencido" || (p.estado==="emitido" && p.mes < mesActual());
+    const badge = p.estado==="canjeado" ? `<span class="badge b-canj">✔ CANJEADO</span>`
+      : vencido ? `<span class="badge b-venc">✖ VENCIDO</span>` : `<span class="badge b-ok">✅ DISPONIBLE</span>`;
+    box.innerHTML = `
+    <div class="card" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between"><b style="font-size:16px">${esc(p.cliente_id)}</b>${badge}</div>
+      <p style="font-family:var(--fd);font-size:22px;color:var(--bay-deep);margin:10px 0 2px">${esc(p.premio)}</p>
+      <p class="small">Hito ${p.hito} · Mes ${esc(p.mes)} · Código <b>${esc(p.codigo_unico)}</b></p>
+      ${p.estado==="canjeado" ? `<p class="small">Canjeado el ${new Date(p.fecha_canje).toLocaleString("es-CO")} por ${esc(p.usuario_canje||"")}</p>`
+        : vencido ? `<p class="small">Este premio ya no se puede entregar.</p>`
+        : `<button class="btn btn-coral" style="width:100%;margin-top:10px" onclick="canjear('${esc(p.codigo_unico)}')">Marcar como canjeado</button>`}
+    </div>`;
+  }catch(e){toast(e.message);}
+}
+async function canjear(cod){
+  try{ const r=await api("premios.canjear",{codigo_unico:cod,usuario_canje:staffName});
+    if(r.ok){ toast("✔ Premio canjeado"); } else { toast(r.error); } buscar(); }
+  catch(e){toast(e.message);}
+}
+
+/* ── 2) Reporte de premios ── */
+function viewReporte(){
+  document.getElementById("view").innerHTML = `
+  <div class="card">
+    <h2>Reporte mensual de premios</h2>
+    <div class="row"><input id="mes" value="${mesActual()}" placeholder="AAAA-MM" style="max-width:160px">
+      <button class="btn btn-primary" onclick="cargarReporte()">Ver</button>
+      <button class="btn" style="background:#eee" onclick="recompute()">Recalcular emisiones</button></div>
+    <div id="rep"></div>
+  </div>`;
+  cargarReporte();
+}
+async function cargarReporte(){
+  const mes=(document.getElementById("mes").value||mesActual()).trim();
+  try{
+    const r=await api("premios.reporte",{mes});
+    let filas=Object.keys(r.por_hito).sort((a,b)=>a-b).map(k=>{
+      const h=r.por_hito[k];
+      return `<tr><td>${k}</td><td>${esc(h.premio)}</td><td>${h.emitidos}</td><td>${h.canjeados}</td><td>${h.vencidos}</td></tr>`;
+    }).join("") || `<tr><td colspan="5" class="small">Sin premios en este mes.</td></tr>`;
+    document.getElementById("rep").innerHTML = `
+      <div class="kpi">
+        <div><b>${r.emitidos}</b><span>Emitidos vigentes</span></div>
+        <div><b>${r.canjeados}</b><span>Canjeados</span></div>
+        <div><b>${r.vencidos}</b><span>Vencidos</span></div>
+        <div><b>$${(r.costo_estimado||0).toLocaleString("es-CO")}</b><span>Costo estimado</span></div>
+      </div>
+      <table><thead><tr><th>Hito</th><th>Premio</th><th>Emitidos</th><th>Canjeados</th><th>Vencidos</th></tr></thead><tbody>${filas}</tbody></table>
+      <p class="small" style="margin-top:8px">Los costos por hito se editan en Supabase (clave <code>premio-costos</code>).</p>`;
+  }catch(e){toast(e.message);}
+}
+async function recompute(){
+  try{ const r=await api("premios.recompute",{mes:(document.getElementById("mes").value||mesActual()).trim()});
+    toast("Emitidos nuevos: "+r.emitidos_nuevos); cargarReporte(); }catch(e){toast(e.message);}
+}
+
+/* ── 3) Campañas ── */
+function viewCampanas(){
+  document.getElementById("view").innerHTML = `
+  <div class="card">
+    <h2>Campañas de reactivación</h2>
+    <p class="sub">Genera la lista de la campaña, edita el mensaje y envía uno por uno por WhatsApp.</p>
+    <div class="row" style="margin-bottom:10px"><label class="small">Campaña</label>
+      <input id="camp" value="${trimestreActual()}" style="max-width:160px">
+      <button class="btn" style="background:#eee" onclick="cargarPlantilla()">Cargar</button></div>
+    <label class="small">Mensaje (usa <b>{nombre}</b>)</label>
+    <textarea id="tpl" placeholder="Cargando plantilla…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-primary" onclick="guardarPlantilla()">Guardar mensaje</button>
+      <button class="btn btn-coral" onclick="generar()">Generar lista</button></div>
+    <div id="lista"></div>
+  </div>`;
+  cargarPlantilla(); cargarLista();
+}
+async function cargarPlantilla(){
+  try{ const {texto}=await api("campanas.plantilla_get",{campana:campVal()}); document.getElementById("tpl").value=texto||""; }
+  catch(e){toast(e.message);}
+}
+function campVal(){return (document.getElementById("camp").value||trimestreActual()).trim();}
+async function guardarPlantilla(){
+  try{ await api("campanas.plantilla_set",{campana:campVal(),texto:document.getElementById("tpl").value}); toast("Mensaje guardado"); }
+  catch(e){toast(e.message);}
+}
+async function generar(){
+  try{ toast("Generando…"); const r=await api("campanas.generar",{campana:campVal()});
+    toast("Candidatos: "+r.candidatos); cargarLista(); }catch(e){toast(e.message);}
+}
+async function cargarLista(){
+  try{
+    const {filas}=await api("campanas.lista",{campana:campVal()});
+    const tpl=document.getElementById("tpl").value;
+    const rows=(filas||[]).map(f=>{
+      const enviado = f.enviado ? `<span class="badge b-ok">enviado</span>` : `<span class="small">—</span>`;
+      return `<tr><td>${esc(f.nombre||f.cliente_id)}</td><td>${f.dias_sin_jugar}</td><td>${f.total_reservas}</td>
+        <td>$${Number(f.facturacion_historica||0).toLocaleString("es-CO")}</td>
+        <td>${enviado}</td>
+        <td><button class="btn btn-wa" onclick="enviarWA('${esc(f.cliente_id)}','${esc(f.telefono||f.cliente_id)}','${esc(f.nombre||'')}')">Enviar WhatsApp</button></td></tr>`;
+    }).join("") || `<tr><td colspan="6" class="small">Aún no hay lista. Pulsa "Generar lista".</td></tr>`;
+    document.getElementById("lista").innerHTML =
+      `<table style="margin-top:16px"><thead><tr><th>Nombre</th><th>Días s/jugar</th><th>Total res.</th><th>Facturación</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){ document.getElementById("lista").innerHTML=`<p class="small" style="margin-top:12px">${esc(e.message)}</p>`; }
+}
+async function enviarWA(clienteId, telefono, nombre){
+  const tpl=document.getElementById("tpl").value || "";
+  const msg=tpl.replace(/\{nombre\}/g, nombre||"");
+  const url="https://wa.me/"+String(telefono).replace(/\D/g,"")+"?text="+encodeURIComponent(msg);
+  window.open(url,"_blank");
+  try{ await api("campanas.marcar_enviado",{cliente_id:clienteId,campana:campVal()}); cargarLista(); }catch(e){/* best-effort */}
+}
+
+/* ── 4) Reporte de campaña ── */
+function viewRepCamp(){
+  document.getElementById("view").innerHTML = `
+  <div class="card">
+    <h2>Reporte de campaña</h2>
+    <p class="sub">Enviados, cuántos volvieron a jugar en los 14 días siguientes y su facturación.</p>
+    <div class="row"><input id="rc" value="${trimestreActual()}" style="max-width:160px">
+      <button class="btn btn-primary" onclick="cargarRepCamp()">Ver</button></div>
+    <div id="rcbox"></div>
+  </div>`;
+}
+async function cargarRepCamp(){
+  const campana=(document.getElementById("rc").value||trimestreActual()).trim();
+  try{
+    toast("Calculando…"); const r=await api("campanas.reporte",{campana});
+    const tasa = r.enviados ? Math.round(100*r.reservaron/r.enviados) : 0;
+    document.getElementById("rcbox").innerHTML=`<div class="kpi">
+      <div><b>${r.enviados}</b><span>Mensajes enviados</span></div>
+      <div><b>${r.reservaron}</b><span>Jugaron en 14 días</span></div>
+      <div><b>${tasa}%</b><span>Tasa de retorno</span></div>
+      <div><b>$${Number(r.facturacion||0).toLocaleString("es-CO")}</b><span>Facturación generada</span></div>
+    </div>`;
+  }catch(e){toast(e.message);}
+}
+
+render();
+</script>
+</body>
+</html>
