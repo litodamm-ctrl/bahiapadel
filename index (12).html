@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bahía Padel — Reservas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bay-deep:#0E3B43;
+    --bay-deep-2:#123F49;
+    --bay-teal:#1F9E92;
+    --bay-teal-light:#DCEFEC;
+    --sand:#F3E9D2;
+    --sand-light:#FAF5E8;
+    --coral:#FF6A4D;
+    --coral-dark:#E14E30;
+    --occupied:#F2994A;
+    --class-color:#7A5FB0;
+    --block-color:#3A4A4D;
+    --past:#E3E7E6;
+    --past-ink:#7C8A8D;
+    --ink:#14282B;
+    --ink-soft:#4B6167;
+    --white:#FFFFFF;
+    --line:rgba(20,40,43,0.14);
+    --font-display:'Bebas Neue', sans-serif;
+    --font-body:'Work Sans', sans-serif;
+    --font-mono:'Space Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-body);background:var(--sand-light);color:var(--ink);}
+  button{font-family:inherit;cursor:pointer;}
+  input:focus-visible, button:focus-visible, select:focus-visible{outline:2px solid var(--coral); outline-offset:2px;}
+  ::selection{background:var(--coral); color:var(--white);}
+
+  header{background:linear-gradient(160deg, var(--bay-deep) 0%, var(--bay-deep-2) 100%); position:relative; padding:28px 20px 46px;}
+  .header-inner{max-width:960px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .wordmark{font-family:var(--font-display); font-size:clamp(34px,6vw,50px); letter-spacing:1.5px; color:var(--white); line-height:1;}
+  .tagline{font-family:var(--font-mono); font-size:12px; color:#9FD4CC; letter-spacing:0.5px; margin-top:6px; text-transform:uppercase;}
+  nav.tabs{display:flex; gap:8px; margin-top:24px; flex-wrap:wrap; align-items:center;}
+  .tab-btn{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:var(--white); padding:9px 18px; border-radius:999px; font-size:14px; font-weight:600; transition:all .15s ease;}
+  .tab-btn:hover{background:rgba(255,255,255,0.16);}
+  .tab-btn.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
+  .lock-btn{margin-left:auto; padding:9px 14px;}
+  .wave-divider{position:absolute; bottom:-1px; left:0; width:100%; height:36px; display:block;}
+
+  main{max-width:960px; margin:0 auto; padding:28px 20px 100px;}
+
+  .date-row{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; margin-bottom:18px; border-bottom:1px solid var(--line);}
+  .date-pill{flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:64px; border-radius:14px; border:1.5px solid var(--line); background:var(--white); color:var(--ink); transition:all .15s ease;}
+  .date-pill .dow{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; opacity:0.65;}
+  .date-pill .dnum{font-family:var(--font-display); font-size:22px; line-height:1.1; margin-top:2px;}
+  .date-pill.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
+  .date-pill:hover:not(.active){border-color:var(--bay-teal);}
+
+  .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  h2.section-title{font-family:var(--font-display); font-size:26px; letter-spacing:0.5px; margin:0 0 4px;}
+  p.section-sub{color:var(--ink-soft); font-size:14px; margin:0 0 12px;}
+  .refresh-btn{background:none; border:1px solid var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; white-space:nowrap;}
+  .refresh-btn:hover{background:var(--bay-teal-light);}
+
+  .legend{display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin-bottom:16px; flex-wrap:wrap;}
+  .legend .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle;}
+  .dot.free{background:var(--bay-teal);}
+  .dot.occ{background:var(--occupied);}
+  .dot.class{background:var(--class-color);}
+  .dot.block{background:var(--block-color);}
+  .dot.past{background:var(--past-ink);}
+
+  .court-scroll{overflow:auto; max-height:560px; border-radius:16px; border:1px solid var(--line); background:var(--white);}
+  .court-grid{display:grid; min-width:440px;}
+  .court-head-row, .court-row{display:grid; grid-template-columns:74px repeat(var(--ncourts,2), 1fr);}
+  .court-head-row{border-bottom:1px solid var(--line); background:var(--sand); position:sticky; top:0; z-index:2;}
+  .court-head-cell{padding:10px 8px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;}
+  .court-head-cell .cname{font-family:var(--font-display); font-size:16px; letter-spacing:0.5px;}
+  .occ-badge{font-family:var(--font-mono); font-size:10px; padding:2px 8px; border-radius:999px; display:inline-block;}
+  .occ-low{background:var(--bay-teal-light); color:var(--bay-deep);}
+  .occ-mid{background:#FFF1CE; color:#9A6B00;}
+  .occ-high{background:#FFE3DA; color:var(--coral-dark);}
+  .court-row{border-bottom:1px solid var(--line);}
+  .court-row:last-child{border-bottom:none;}
+  .time-cell{font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); border-right:1px solid var(--line); background:var(--sand-light);}
+  .slot-cell{padding:5px; display:flex; align-items:center; justify-content:center; border-right:1px solid var(--line);}
+  .slot-cell:last-child{border-right:none;}
+  .slot-btn{width:100%; height:36px; border-radius:8px; border:1.5px dashed var(--bay-teal); background:var(--bay-teal-light); color:var(--bay-deep); font-size:11px; font-weight:700; transition:all .15s ease;}
+  .slot-btn:hover{background:var(--bay-teal); color:var(--white);}
+  .slot-taken{width:100%; height:36px; border-radius:8px; background:var(--occupied); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; padding:0 4px; text-align:center; gap:3px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+  .slot-taken.slot-class{background:var(--class-color);}
+  .slot-taken.slot-block{background:var(--block-color);}
+  .slot-taken-continue{opacity:.55;}
+  .slot-past{width:100%; height:36px; border-radius:8px; background:var(--past); color:var(--past-ink); display:flex; align-items:center; justify-content:center; font-size:13px;}
+
+  .class-row{display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:10px; flex-wrap:wrap;}
+  .class-row-time{font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); width:96px; flex-shrink:0;}
+  .class-row-info{flex:1; min-width:160px;}
+  .class-row-info .who{font-weight:600; font-size:14px;}
+  .class-row-info .meta{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+
+  .empty-note{color:var(--ink-soft); font-size:14px; padding:30px 10px; text-align:center;}
+
+  .overlay{position:fixed; inset:0; background:rgba(14,59,67,0.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50;}
+  .modal{background:var(--white); border-radius:18px; padding:26px; width:100%; max-width:400px; max-height:90vh; overflow-y:auto;}
+  .modal h3{font-family:var(--font-display); font-size:24px; margin:0 0 4px;}
+  .modal p.modal-sub{color:var(--ink-soft); font-size:13px; margin:0 0 18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
+  .field input, .field select{width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--line); font-size:15px; font-family:inherit; background:var(--white);}
+  .field input:focus, .field select:focus{border-color:var(--bay-teal);}
+  .client-suggestions{position:absolute; top:100%; left:0; right:0; background:var(--white); border:1px solid var(--line); border-radius:10px; margin-top:4px; max-height:180px; overflow-y:auto; z-index:10; box-shadow:0 6px 16px rgba(0,0,0,0.14);}
+  .client-suggestion-item{padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--line);}
+  .client-suggestion-item:last-child{border-bottom:none;}
+  .client-suggestion-item:hover{background:var(--bay-teal-light);}
+  .csi-name{font-weight:600;}
+  .csi-phone{color:var(--ink-soft); font-size:11px;}
+  .type-options{display:flex; gap:10px; margin:16px 0;}
+  .type-card{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; border:1.5px solid var(--line); border-radius:14px; padding:18px 10px; background:var(--sand-light);}
+  .type-card:hover{border-color:var(--bay-teal); background:var(--bay-teal-light);}
+  .type-icon{font-size:26px;}
+  .type-label{font-family:var(--font-display); font-size:18px;}
+  .type-sub{font-size:11px; color:var(--ink-soft);}
+  .type-tag{font-size:10px; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; text-transform:uppercase; font-weight:700;}
+  .type-tag.cancha{background:#FFE8D8; color:var(--coral-dark);}
+  .type-tag.clase{background:#EDE7F6; color:#5B3E96;}
+  .type-tag.bloqueo{background:#E4E7E7; color:var(--block-color);}
+  .type-tag.courtesy{background:#FFF1CE; color:#9A6B00;}
+  .duration-options{display:flex; gap:8px; flex-wrap:wrap;}
+  .dur-pill{border:1.5px solid var(--line); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; user-select:none; background:var(--white);}
+  .dur-pill input{display:none;}
+  .dur-pill.active{background:var(--bay-teal); color:var(--white); border-color:var(--bay-teal);}
+  .summary-line{font-family:var(--font-mono); font-size:13px; background:var(--sand); border-radius:10px; padding:10px 12px; margin:6px 0 4px; color:var(--ink);}
+  .pay-note{font-size:13px; color:var(--ink-soft); margin:4px 0 14px;}
+  .legal-check{display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--ink-soft); margin-bottom:10px; line-height:1.4;}
+  .legal-check input{margin-top:2px; flex-shrink:0;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .btn-confirm{flex:1; background:var(--coral); color:var(--white); border:none; padding:12px; border-radius:10px; font-weight:700;}
+  .btn-confirm:hover{background:var(--coral-dark);}
+  .btn-confirm:disabled{background:var(--line); color:var(--ink-soft); cursor:not-allowed;}
+  .btn-cancel{background:none; border:none; color:var(--ink-soft); font-size:14px; padding:12px;}
+  .error-text{color:var(--coral-dark); font-size:12px; margin-top:-8px; margin-bottom:12px;}
+
+  .admin-login{max-width:300px; margin:40px auto; text-align:center;}
+  .admin-login p{color:var(--ink-soft); font-size:13px; margin-bottom:16px;}
+  .block-open-btn{background:none; border:1.5px dashed var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:9px 18px; font-size:13px; font-weight:700; margin-bottom:18px;}
+  .block-open-btn:hover{background:var(--bay-teal-light);}
+  .admin-list-item{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:10px;}
+  .admin-list-item .meta{font-size:13px; color:var(--ink-soft);}
+  .admin-list-item .who{font-weight:600; font-size:14px;}
+  .admin-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .cancel-link{background:none; border:1px solid var(--coral); color:var(--coral-dark); border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700;}
+  .cancel-link:hover{background:var(--coral); color:var(--white);}
+  .edit-link{background:none; border:1px solid var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:6px 14px; font-size:12px; font-weight:700;}
+  .edit-link:hover{background:var(--bay-teal); color:var(--white);}
+  .wa-mini{background:#25D366; color:#fff; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;}
+  .admin-danger{margin-top:26px; text-align:center;}
+  .admin-danger button{background:none; border:1px dashed var(--ink-soft); color:var(--ink-soft); padding:8px 16px; border-radius:999px; font-size:12px;}
+
+  .metrics-box{background:var(--white); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:18px;}
+  .metrics-dates{display:flex; gap:10px; flex-wrap:wrap;}
+  .metrics-dates .field{flex:1; min-width:140px;}
+  .metrics-buttons{display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
+  .metrics-buttons button{background:none; border:1px solid var(--bay-teal); color:var(--bay-deep); border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700;}
+  .metrics-buttons button:hover{background:var(--bay-teal-light);}
+  .metrics-buttons button:disabled{opacity:0.6; cursor:not-allowed;}
+
+  .history-item{display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:9px 4px; border-bottom:1px solid var(--line); font-size:13px;}
+  .history-time{font-family:var(--font-mono); color:var(--ink-soft); width:52px; flex-shrink:0;}
+  .history-badge{padding:3px 9px; border-radius:999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;}
+  .badge-teal{background:var(--bay-teal-light); color:var(--bay-deep);}
+  .badge-coral{background:#FFE3DA; color:var(--coral-dark);}
+  .badge-amber{background:#FFF1CE; color:#9A6B00;}
+  .history-detail{flex:1; min-width:160px;}
+  .history-actor{color:var(--ink-soft); font-size:12px;}
+  .panel-subhead{font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft); margin:22px 0 10px;}
+
+  #toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--white); padding:12px 22px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; transition:all .25s ease; pointer-events:none; z-index:100; max-width:88vw; text-align:center;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .wa-banner{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--white); border:1px solid var(--line); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:center; box-shadow:0 8px 24px rgba(14,59,67,0.18); z-index:60; max-width:92vw; flex-wrap:wrap;}
+  .wa-btn{background:#25D366; color:#fff; padding:9px 16px; border-radius:999px; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap;}
+  .wa-dismiss{background:none;border:none;color:var(--ink-soft);font-size:16px; padding:4px;}
+
+  .loading-note{text-align:center; color:var(--ink-soft); padding:40px; font-family:var(--font-mono); font-size:13px;}
+
+  @media (max-width:480px){
+    .wordmark{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <rect x="3" y="3" width="28" height="28" rx="4" stroke="#FF6A4D" stroke-width="2"/>
+        <line x1="17" y1="3" x2="17" y2="31" stroke="#FF6A4D" stroke-width="2"/>
+        <line x1="3" y1="17" x2="31" y2="17" stroke="#FF6A4D" stroke-width="2"/>
+      </svg>
+      <div class="wordmark">BAHÍA PADEL</div>
+    </div>
+    <div class="tagline">Reservas de cancha &amp; clases</div>
+    <nav class="tabs" id="tabsNav"></nav>
+  </div>
+  <svg class="wave-divider" viewBox="0 0 1200 36" preserveAspectRatio="none">
+    <path d="M0,18 C150,36 350,0 600,18 C850,36 1050,0 1200,18 L1200,36 L0,36 Z" fill="#FAF5E8"/>
+  </svg>
+</header>
+
+<main id="app">
+  <div class="loading-note">Cargando…</div>
+</main>
+
+<div id="toast"></div>
+<div id="waBannerWrap"></div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+   PUENTE DE ALMACENAMIENTO · Bahía Padel Social Club
+   Reemplaza el window.storage de los artefactos de Claude por
+   llamadas a /.netlify/functions/kv (que a su vez habla con Supabase).
+   El resto de la app no necesita ningún cambio: misma interfaz
+   get / set / delete / list.
+   ──────────────────────────────────────────────────────────────── */
+(function(){
+  var ENDPOINT  = "/.netlify/functions/kv";
+  var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
+  var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
+  var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
+  var LOGIN_AT_KEY = "bpsc:loginAt";       // cuándo se ingresó el código (corte a 10 h)
+  var AUTH_MAX_MS  = 10 * 60 * 60 * 1000;  // 10 horas
+  window.__setLoginAt = function(){
+    try { localStorage.setItem(LOGIN_AT_KEY, String(Date.now())); } catch(e){}
+  };
+  window.__authExpired = function(){
+    try {
+      var t = parseInt(localStorage.getItem(LOGIN_AT_KEY) || "0", 10);
+      return !t || (Date.now() - t) > AUTH_MAX_MS;
+    } catch(e){ return true; }
+  };
+
+  window.__appCode = null;
+  window.__appToken = null;
+  try { window.__appCode = localStorage.getItem(CODE_KEY); } catch(e){}
+  try { window.__appToken = localStorage.getItem(TOKEN_KEY); } catch(e){}
+
+  window.__setAppCode = function(c){
+    window.__appCode = c;
+    try { localStorage.setItem(CODE_KEY, c); } catch(e){}
+  };
+  // Cuando el servidor emite un token: lo guardamos y DEJAMOS de guardar el
+  // código en disco (el código queda solo en memoria de esta pestaña). Así el
+  // código no vive "para siempre" en el navegador y la sesión caduca sola.
+  window.__useSession = function(token){
+    if(!token) return;
+    window.__appToken = token;
+    try { localStorage.setItem(TOKEN_KEY, token); localStorage.removeItem(CODE_KEY); } catch(e){}
+  };
+  window.__clearAppCode = function(){
+    window.__appCode = null;
+    window.__appToken = null;
+    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); } catch(e){}
+  };
+
+  async function api(action, extra){
+    var body = Object.assign({ action: action, code: window.__appCode || "" }, extra || {});
+    if (window.__appToken) body.token = window.__appToken;
+    var r = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (r.status === 401){
+      // Un token caducado no debe reutilizarse; lo soltamos (el código en
+      // memoria, si lo hay, sigue sirviendo de respaldo en esta pestaña).
+      window.__appToken = null;
+      try { localStorage.removeItem(TOKEN_KEY); } catch(e){}
+      var err = new Error("Código no válido"); err.noAuth = true; throw err;
+    }
+    if (!r.ok){
+      var txt = "";
+      try { txt = (await r.json()).error || ""; } catch(e){}
+      throw new Error("Servidor " + r.status + (txt ? ": " + txt : ""));
+    }
+    return await r.json();
+  }
+  window.__api = api;
+
+  function sesionLeer(){
+    try { var v = localStorage.getItem(SESS_KEY); return v ? { key:"session-state", value:v } : null; }
+    catch(e){ return null; }
+  }
+
+  window.storage = {
+    get: async function(key, shared){
+      if (key === "session-state") return sesionLeer();
+      return await api("get", { key: key });
+    },
+    set: async function(key, value, shared){
+      if (key === "session-state"){
+        try { localStorage.setItem(SESS_KEY, value); } catch(e){}
+        return { key: key, value: value };
+      }
+      return await api("set", { key: key, value: value });
+    },
+    delete: async function(key, shared){
+      if (key === "session-state"){
+        try { localStorage.removeItem(SESS_KEY); } catch(e){}
+        return { key: key, deleted: true };
+      }
+      return await api("delete", { key: key });
+    },
+    list: async function(prefix, shared){
+      return await api("list", { prefix: prefix || "" });
+    }
+  };
+})();
+</script>
+<script>
+/* ---------- CONFIG ---------- */
+const COURTS = ['Cancha 1', 'Cancha 2'];
+
+function generateTimeSlots(startHour, endHour, stepMin){
+  const slots = [];
+  for(let t = startHour*60; t < endHour*60; t += stepMin){
+    const h = String(Math.floor(t/60)).padStart(2,'0');
+    const m = String(t%60).padStart(2,'0');
+    slots.push(`${h}:${m}`);
+  }
+  return slots;
+}
+const OPEN_HOUR = 6;   // 6am
+const CLOSE_HOUR = 23; // 11pm
+const TIME_SLOTS = generateTimeSlots(OPEN_HOUR, CLOSE_HOUR, 30); // 06:00 .. 22:30, cierre 23:00
+
+const DURATIONS = [
+  { slots:1, label:'30 min' },
+  { slots:2, label:'60 min' },
+  { slots:3, label:'90 min' },
+  { slots:4, label:'120 min' },
+];
+
+const TRAINERS = ['Tomás', 'Isaías'];
+const CLASS_BASE_RATE_PER_HOUR = 150000;
+const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
+
+// ---- Códigos de acceso: cámbialos aquí por los que quieras usar en el club ----
+/* El código de entrada ya NO está aquí: lo valida el servidor contra la
+   variable APP_ACCESS_CODE de Netlify (ver netlify/functions/kv.js). */
+const ADMIN_PIN = '0293'; // OJO: sigue en el navegador, cualquiera puede verlo en el código fuente.
+                          // Pendiente de mover al servidor como se hizo con el código de entrada.
+// --------------------------------------------------------------------------------
+
+const DOW_LABELS = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const POLL_INTERVAL_MS = 20000; // refresco automático cada 20s
+
+const CANCHA_CSV_COLUMNS = [
+  { label:'Tipo', get:r=>'Cancha' },
+  { label:'Fecha', get:r=>r.date },
+  { label:'Hora inicio', get:r=>r.startTime },
+  { label:'Hora fin', get:r=>r.endTime },
+  { label:'Cancha', get:r=>r.court },
+  { label:'Cliente', get:r=>r.name },
+  { label:'Teléfono', get:r=>r.phone },
+  { label:'Correo', get:r=>r.email },
+  { label:'Cortesía', get:r=> r.courtesy==='full' ? 'Completa' : r.courtesy==='quarter' ? '1/4' : 'No' },
+  { label:'Precio lista', get:r=> r.listPrice!==undefined ? r.listPrice : r.price },
+  { label:'Precio final', get:r=>r.price },
+  { label:'Comentario', get:r=>r.comment },
+];
+const CLASE_CSV_COLUMNS = [
+  { label:'Tipo', get:r=>'Clase' },
+  { label:'Entrenador', get:r=>r.trainer },
+  { label:'Fecha', get:r=>r.date },
+  { label:'Hora inicio', get:r=>r.startTime },
+  { label:'Hora fin', get:r=>r.endTime },
+  { label:'Cancha', get:r=>r.court },
+  { label:'Cliente', get:r=>r.name },
+  { label:'Teléfono', get:r=>r.phone },
+  { label:'Correo', get:r=>r.email },
+  { label:'Jugadores', get:r=>r.players },
+  { label:'Cortesía', get:r=> r.courtesy==='full' ? 'Completa' : r.courtesy==='quarter' ? '1/4' : 'No' },
+  { label:'Precio lista', get:r=> r.listPrice!==undefined ? r.listPrice : r.price },
+  { label:'Precio final', get:r=>r.price },
+  { label:'Comentario', get:r=>r.comment },
+];
+
+/* ---------- STATE ---------- */
+let state = {
+  dates: [],
+  selectedDate: null,
+  tab: 'cancha',
+  isAdmin: false,
+  staffName: '',
+  courtBookings: {},
+  history: [],
+  clients: [],
+  loading: true,
+  modal: null,
+  lastConfirmation: null,
+  trainerFilter: 'todos',
+  appUnlocked: false,
+};
+
+let bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
+function resetBookingFlow(){
+  bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
+}
+
+let blockForm = { court: COURTS[0], startDate:'', startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
+function resetBlockForm(){
+  blockForm = { court: COURTS[0], startDate: fmtDate(state.selectedDate), startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
+}
+
+// Rango de fechas de Métricas y reportes: se guarda aquí (no en el HTML) para que
+// un re-render (refresco automático, editar/cancelar algo, etc.) nunca lo resetee.
+let metricsRange = { start:'', end:'' };
+
+let pollTimer = null;
+
+/* ---------- HELPERS ---------- */
+function fmtDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function sameDay(a,b){ return fmtDate(a)===fmtDate(b); }
+function initDates(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const arr = [];
+  for(let i=0;i<14;i++){ const d=new Date(today); d.setDate(today.getDate()+i); arr.push(d); }
+  state.dates = arr;
+  state.selectedDate = arr[0];
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+function esc(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function computeEndTime(startTime, slots){
+  const idx = TIME_SLOTS.indexOf(startTime);
+  const endIdx = idx + slots;
+  return endIdx < TIME_SLOTS.length ? TIME_SLOTS[endIdx] : `${String(CLOSE_HOUR).padStart(2,'0')}:00`;
+}
+function maxAvailableSlots(time, court){
+  const idx = TIME_SLOTS.indexOf(time);
+  let count = 0;
+  for(let i=idx; i<TIME_SLOTS.length && count<4; i++){
+    const key = `${TIME_SLOTS[i]}|${court}`;
+    if(state.courtBookings[key]) break;
+    count++;
+  }
+  return count;
+}
+function isPastSlot(time){
+  if(!sameDay(state.selectedDate, new Date())) return false;
+  const now = new Date();
+  const [h,m] = time.split(':').map(Number);
+  const slotDateTime = new Date(state.selectedDate);
+  slotDateTime.setHours(h,m,0,0);
+  return slotDateTime.getTime() <= now.getTime();
+}
+function formatCOP(n){
+  return '$' + Math.round(n).toLocaleString('es-CO');
+}
+function courtOccupancyPercent(court){
+  let occupied = 0;
+  TIME_SLOTS.forEach(t=>{ if(state.courtBookings[`${t}|${court}`]) occupied++; });
+  return Math.round((occupied / TIME_SLOTS.length) * 100);
+}
+function occBadgeClass(pct){
+  if(pct>=75) return 'occ-high';
+  if(pct>=40) return 'occ-mid';
+  return 'occ-low';
+}
+function discountFactor(courtesy){
+  if(courtesy==='full') return 0;
+  if(courtesy==='quarter') return 0.75;
+  return 1;
+}
+
+/* ---------- PRECIOS ---------- */
+function courtSlotPrice(time){
+  const [h,m] = time.split(':').map(Number);
+  const totalMin = h*60+m;
+  if(totalMin >= 11*60 && totalMin < 15*60) return 40000;
+  if(totalMin >= 17*60) return 70000;
+  return 50000;
+}
+function priceShortLabel(n){
+  return Math.round(n/1000) + 'k';
+}
+function courtPriceForRange(startTime, slots){
+  const idx = TIME_SLOTS.indexOf(startTime);
+  let total = 0;
+  for(let i=0;i<slots;i++){
+    const t = TIME_SLOTS[idx+i];
+    if(!t) break;
+    total += courtSlotPrice(t);
+  }
+  return total;
+}
+function classPriceForRange(players, slots){
+  const hours = slots * 0.5;
+  const perHour = CLASS_BASE_RATE_PER_HOUR + CLASS_EXTRA_PERSON_PER_HOUR * Math.max(0, players-1);
+  return perHour * hours;
+}
+
+/* ---------- WHATSAPP ---------- */
+function toWhatsAppNumber(phone){
+  let digits = String(phone).replace(/\D/g,'');
+  if(digits.length===10 && digits.startsWith('3')) digits = '57'+digits;
+  return digits;
+}
+function buildWhatsAppLink(phone, message){
+  return `https://wa.me/${toWhatsAppNumber(phone)}?text=${encodeURIComponent(message)}`;
+}
+/* Código de video: identificador corto y único que enlaza cada reserva con
+   la app de grabaciones. Alfabeto sin caracteres ambiguos (0/O, 1/I/L). */
+function nuevoCodigoVideo(){
+  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0;i<6;i++) s += abc[Math.floor(Math.random()*abc.length)];
+  // Se antepone una porción del tiempo para minimizar aún más las colisiones.
+  const t = Date.now().toString(36).slice(-2).toUpperCase();
+  return `BP-${t}${s}`;
+}
+function lineaVideo(codigo){
+  return codigo ? `\nCódigo de video: ${codigo}\nMirá el video de tu partido acá: https://padelreplay.netlify.app/?codigo=${codigo}` : '';
+}
+function buildCourtWhatsAppMessage(name, court, dateStr, start, end, codigoVideo){
+  return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos en cancha!`;
+}
+function buildClaseWhatsAppMessage(name, trainer, court, dateStr, start, end, players, codigoVideo){
+  return `Hola ${name}! Tu clase con ${trainer} en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nJugadores: ${players}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos!`;
+}
+
+/* ---------- CSV ---------- */
+function toCSV(rows, columns){
+  const header = columns.map(c=>c.label).join(',');
+  const lines = rows.map(r=> columns.map(c=>{
+    let v = c.get(r);
+    v = (v===undefined || v===null) ? '' : String(v);
+    if(v.indexOf(',')>-1 || v.indexOf('"')>-1 || v.indexOf('\n')>-1){
+      v = '"' + v.replace(/"/g,'""') + '"';
+    }
+    return v;
+  }).join(','));
+  return [header, ...lines].join('\n');
+}
+function downloadCSV(filename, csvContent){
+  const blob = new Blob(['\uFEFF' + csvContent], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+async function gatherRangeEntries(startDateStr, endDateStr, filterFn){
+  const [sy,sm,sd] = startDateStr.split('-').map(Number);
+  const [ey,em,ed] = endDateStr.split('-').map(Number);
+  const start = new Date(sy, sm-1, sd);
+  const end = new Date(ey, em-1, ed);
+  const results = [];
+  const cursor = new Date(start);
+  while(cursor <= end){
+    const dateStr = fmtDate(cursor);
+    const bookings = await loadCourtBookings(dateStr);
+    const seen = new Set();
+    Object.values(bookings).forEach(b=>{
+      if(!b || seen.has(b.groupId)) return;
+      seen.add(b.groupId);
+      if(filterFn(b)) results.push({ date:dateStr, ...b });
+    });
+    cursor.setDate(cursor.getDate()+1);
+  }
+  results.sort((a,b)=> a.date===b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date));
+  return results;
+}
+
+/* ---------- STORAGE: reservas / historial ---------- */
+async function loadCourtBookings(dateStr){
+  try{
+    const res = await window.storage.get(`cancha:${dateStr}`, true);
+    return res ? JSON.parse(res.value) : {};
+  }catch(e){ return {}; }
+}
+async function loadHistory(dateStr){
+  try{
+    const res = await window.storage.get(`historial:${dateStr}`, true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveCourtBookings(dateStr, data){
+  if(!window.storage) throw new Error('Almacenamiento no disponible');
+  await window.storage.set(`cancha:${dateStr}`, JSON.stringify(data), true);
+}
+/* ---------- STORAGE: índice para la app de videos ----------
+   Cada reserva tiene un codigo_video. Guardamos una clave video:<codigo> que
+   apunta a los datos de esa reserva, para que la app de videos la resuelva con
+   una sola llamada (action:"get", key:"video:<codigo>"). Es best-effort: si
+   falla, la reserva ya quedó guardada y no se rompe nada. */
+async function saveVideoIndex(codigo, info){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.set(`video:${codigo}`, JSON.stringify(info), true);
+  }catch(e){ console.warn('No se pudo indexar el código de video', e); }
+}
+async function deleteVideoIndex(codigo){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.delete(`video:${codigo}`, true);
+  }catch(e){ console.warn('No se pudo borrar el índice de video', e); }
+}
+async function appendHistory(dateStr, event){
+  const hist = await loadHistory(dateStr);
+  hist.push(event);
+  if(!window.storage) throw new Error('Almacenamiento no disponible');
+  await window.storage.set(`historial:${dateStr}`, JSON.stringify(hist), true);
+  return hist;
+}
+
+/* ---------- STORAGE: directorio de clientes ---------- */
+async function loadClients(){
+  try{
+    const res = await window.storage.get('clientes-directorio', true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveClients(list){
+  try{
+    if(!window.storage) return;
+    await window.storage.set('clientes-directorio', JSON.stringify(list), true);
+  }catch(e){ console.warn('No se pudo guardar el directorio de clientes', e); }
+}
+async function upsertClient(nombre, apellido, phone, email){
+  if(!phone) return;
+  const list = await loadClients();
+  const idx = list.findIndex(c=>c.phone===phone);
+  const record = { nombre, apellido, phone, email };
+  if(idx>-1) list[idx] = record; else list.push(record);
+  await saveClients(list);
+  state.clients = list;
+}
+
+async function loadDateData(){
+  state.loading = true; render();
+  const dateStr = fmtDate(state.selectedDate);
+  state.courtBookings = await loadCourtBookings(dateStr);
+  state.history = await loadHistory(dateStr);
+  state.lastConfirmation = null;
+  state.loading = false;
+  render();
+}
+
+/* ---------- ACTUALIZACIÓN AUTOMÁTICA ENTRE EQUIPOS ---------- */
+var authTimer = null;
+function startAuthWatch(){
+  if(authTimer) return;
+  authTimer = setInterval(()=>{
+    if(state.appUnlocked && window.__authExpired && window.__authExpired()){
+      state.appUnlocked = false; state.isAdmin = false;
+      stopPolling(); clearSessionState();
+      if(window.__clearAppCode) window.__clearAppCode();
+      render();
+      showToast('Tu sesión expiró (10 h). Ingresa el código de acceso de nuevo.');
+    }
+  }, 60000);
+}
+function stopAuthWatch(){ if(authTimer){ clearInterval(authTimer); authTimer = null; } }
+function startPolling(){
+  if(pollTimer) return;
+  startAuthWatch();
+  pollTimer = setInterval(async ()=>{
+    if(!state.appUnlocked || state.modal || document.hidden) return; // no interrumpe formularios abiertos
+    if(state.tab === 'panel') return; // el Panel tiene sus propios formularios (fechas de métricas, login) que no deben resetearse solos
+    const dateStr = fmtDate(state.selectedDate);
+    state.courtBookings = await loadCourtBookings(dateStr);
+    state.history = await loadHistory(dateStr);
+    render();
+  }, POLL_INTERVAL_MS);
+}
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  stopAuthWatch();
+}
+async function manualRefresh(){
+  if(state.modal) return;
+  await loadDateData();
+  showToast('Actualizado.');
+}
+
+/* ---------- ACCIONES: navegación ---------- */
+async function selectDate(d){ state.selectedDate = d; await loadDateData(); }
+function selectTab(tab){ state.tab = tab; render(); }
+async function openSlotModal(time, court){
+  state.modal = { type:'court-flow', time, court };
+  resetBookingFlow();
+  render();
+  state.clients = await loadClients();
+}
+function openEditModal(entry){
+  if((entry.bookingType||'cancha')==='bloqueo'){
+    state.modal = { type:'edit-block', groupId:entry.groupId, court:entry.court, startTime:entry.startTime, endTime:entry.endTime, prefillTitle:entry.title };
+  } else {
+    state.modal = {
+      type:'edit', groupId:entry.groupId, bookingType: entry.bookingType || 'cancha',
+      court:entry.court, startTime:entry.startTime, endTime:entry.endTime,
+      trainer:entry.trainer, players:entry.players,
+      prefillName:entry.name, prefillPhone:entry.phone, prefillEmail:entry.email,
+      prefillComment:entry.comment, prefillCourtesy:entry.courtesy,
+    };
+  }
+  render();
+}
+function openBlockModal(){
+  state.modal = { type:'block' };
+  resetBlockForm();
+  render();
+}
+function closeModal(){ state.modal = null; render(); }
+
+/* ---------- ACCIÓN: reservar (unificada cancha/clase) ---------- */
+async function confirmSlotBooking(time, court, flow, name, phone, email, comment){
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  const idx = TIME_SLOTS.indexOf(time);
+  const slotsNeeded = [];
+  for(let i=0;i<flow.duration;i++){
+    if(idx+i >= TIME_SLOTS.length) break;
+    slotsNeeded.push(TIME_SLOTS[idx+i]);
+  }
+  const conflict = slotsNeeded.some(t => latest[`${t}|${court}`]);
+  if(conflict || slotsNeeded.length===0){
+    showToast('Ese horario ya no está disponible. Elige otro.');
+    state.courtBookings = latest;
+    closeModal();
+    return;
+  }
+  const endTime = computeEndTime(time, flow.duration);
+
+  if(flow.bookingType==='clase'){
+    const overlap = Object.values(latest).some(b=>
+      b && (b.bookingType||'cancha')==='clase' && b.trainer===flow.trainer &&
+      !(b.endTime<=time || b.startTime>=endTime)
+    );
+    if(overlap){
+      showToast(`${flow.trainer} ya tiene una clase en ese horario.`);
+      closeModal();
+      return;
+    }
+  }
+
+  const groupId = `${dateStr}-${court}-${time}-${Date.now()}`;
+  const courtesy = flow.courtesy || 'none';
+  const listPrice = flow.bookingType==='cancha'
+    ? courtPriceForRange(time, flow.duration)
+    : classPriceForRange(flow.players, flow.duration);
+  const price = listPrice * discountFactor(courtesy);
+  const codigoVideo = nuevoCodigoVideo();
+  const bookingInfo = {
+    bookingType: flow.bookingType, name, phone, email, comment: comment||'', courtesy, ts:Date.now(), groupId,
+    startTime:time, endTime, court, price, listPrice,
+    codigo_video: codigoVideo,
+    trainer: flow.bookingType==='clase' ? flow.trainer : undefined,
+    players: flow.bookingType==='clase' ? flow.players : undefined,
+  };
+  slotsNeeded.forEach(t => { latest[`${t}|${court}`] = bookingInfo; });
+
+  await saveCourtBookings(dateStr, latest);
+  // Índice inverso para la app de videos: video:<codigo> -> datos de la reserva.
+  await saveVideoIndex(codigoVideo, {
+    codigo_video: codigoVideo, fecha: dateStr, court, startTime: time, endTime,
+    bookingType: flow.bookingType, groupId, name, phone,
+    trainer: bookingInfo.trainer, players: bookingInfo.players,
+  });
+
+  state.courtBookings = latest;
+  const courtesyTxt = courtesy!=='none' ? ' (cortesía)' : '';
+  const detalle = flow.bookingType==='cancha'
+    ? `${court} · ${time}–${endTime} · ${formatCOP(price)}${courtesyTxt} (cliente: ${name})`
+    : `Clase con ${flow.trainer} · ${court} · ${time}–${endTime} · ${flow.players}p · ${formatCOP(price)}${courtesyTxt} (cliente: ${name})`;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:flow.bookingType, detalle, actor: state.staffName || name, source:'cliente' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+
+  let msg = flow.bookingType==='cancha'
+    ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
+    : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
+  try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
+  state.lastConfirmation = { phone, message: msg };
+  showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
+  closeModal();
+}
+
+/* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
+async function bloquePremioGanado(phone, nombre){
+  if(!phone) return "";
+  const cli = String(phone).replace(/\D/g,"");
+  const r = await fetch("/.netlify/functions/loyalty", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.pendiente_aviso", code: window.__appCode || "", cliente_id: cli })
+  });
+  if(!r.ok) return "";
+  const data = await r.json();
+  const premios = (data && data.premios) || [];
+  if(!premios.length) return "";
+  const p = premios[premios.length-1];
+  fetch("/.netlify/functions/loyalty", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.marcar_avisado", code: window.__appCode || "", codigo_unico: p.codigo_unico }) });
+  const partes = String(p.mes).split("-").map(Number);
+  const ultimo = new Date(partes[0], partes[1], 0);
+  const venc = String(ultimo.getDate()).padStart(2,'0')+"/"+String(partes[1]).padStart(2,'0')+"/"+partes[0];
+  return "\n\n🎉 ¡Felicidades "+ (nombre||"") +"! Con tus reservas de este mes ganaste: "+ p.premio +
+         ".\nTu código de premio: "+ p.codigo_unico +
+         "\nMuéstralo en recepción para reclamarlo. Vence el "+ venc +".";
+}
+
+/* ---------- ACCIÓN: crear bloqueo recurrente ---------- */
+async function createRecurringBlock(title, court, startDateStr, startTime, durationSlots, recurrence, occurrences){
+  const staff = state.staffName || 'Staff';
+  const intervalDays = recurrence==='weekly' ? 7 : recurrence==='daily' ? 1 : null;
+  const count = recurrence==='once' ? 1 : Math.max(1, occurrences);
+  const seriesId = `serie-${Date.now()}`;
+  const courtsToBlock = court==='__all__' ? COURTS : [court];
+  const [sy,sm,sd] = startDateStr.split('-').map(Number);
+  const baseDate = new Date(sy, sm-1, sd);
+
+  let created = 0;
+  const skippedDates = [];
+
+  for(let i=0;i<count;i++){
+    const occDate = new Date(baseDate);
+    if(intervalDays) occDate.setDate(occDate.getDate() + i*intervalDays);
+    const dateStr = fmtDate(occDate);
+    const latest = await loadCourtBookings(dateStr);
+    const idx = TIME_SLOTS.indexOf(startTime);
+    const slotsNeeded = [];
+    for(let k=0;k<durationSlots;k++){
+      if(idx+k>=TIME_SLOTS.length) break;
+      slotsNeeded.push(TIME_SLOTS[idx+k]);
+    }
+    let anyConflict = slotsNeeded.length===0;
+    courtsToBlock.forEach(c=>{
+      slotsNeeded.forEach(t=>{ if(latest[`${t}|${c}`]) anyConflict = true; });
+    });
+    if(anyConflict){ skippedDates.push(dateStr); continue; }
+
+    const endTime = computeEndTime(startTime, durationSlots);
+    const groupIdBase = `${dateStr}-${startTime}-${Date.now()}-${i}`;
+    courtsToBlock.forEach(c=>{
+      const groupId = `${groupIdBase}-${c}`;
+      const info = {
+        bookingType:'bloqueo', title, name:staff, ts:Date.now(), groupId,
+        startTime, endTime, court:c, price:0,
+        seriesId, seriesMeta:{ startDate:startDateStr, intervalDays, occurrences:count },
+      };
+      slotsNeeded.forEach(t=>{ latest[`${t}|${c}`] = info; });
+    });
+
+    try{
+      await saveCourtBookings(dateStr, latest);
+      created++;
+      try{
+        await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:'bloqueo', detalle:`${title} · ${courtsToBlock.join(', ')} · ${startTime}–${endTime}`, actor:staff, source:'panel' });
+      }catch(e){ console.warn('historial', e); }
+    }catch(e){
+      skippedDates.push(dateStr);
+    }
+  }
+  return { created, skippedDates };
+}
+async function cancelSeries(seriesId, seriesMeta){
+  const staff = state.staffName || 'Staff';
+  const intervalDays = seriesMeta.intervalDays;
+  const count = seriesMeta.occurrences;
+  const [sy,sm,sd] = seriesMeta.startDate.split('-').map(Number);
+  const baseDate = new Date(sy, sm-1, sd);
+  let removed = 0;
+  for(let i=0;i<count;i++){
+    const occDate = new Date(baseDate);
+    if(intervalDays) occDate.setDate(occDate.getDate()+i*intervalDays);
+    const dateStr = fmtDate(occDate);
+    const latest = await loadCourtBookings(dateStr);
+    let touched = false;
+    Object.keys(latest).forEach(key=>{
+      if(latest[key] && latest[key].seriesId===seriesId){ delete latest[key]; touched=true; }
+    });
+    if(touched){
+      try{
+        await saveCourtBookings(dateStr, latest);
+        removed++;
+        try{ await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'bloqueo', detalle:'Bloqueo recurrente cancelado (serie completa)', actor:staff, source:'panel' }); }catch(e){}
+      }catch(e){ /* se ignora ese día puntual */ }
+    }
+  }
+  return removed;
+}
+
+/* ---------- ACCIONES: editar / cancelar (panel) ---------- */
+function labelForBooking(b){
+  const type = b.bookingType || 'cancha';
+  if(type==='cancha') return b.court;
+  if(type==='clase') return `Clase con ${b.trainer}`;
+  return `Bloqueo "${b.title}"`;
+}
+async function editBooking(groupId, newName, newPhone, newEmail, newComment, newCourtesy){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  let ref = null;
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId===groupId){
+      const listPrice = b.listPrice!==undefined ? b.listPrice : b.price;
+      const newPrice = listPrice * discountFactor(newCourtesy);
+      if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime}: ${b.name} → ${newName}`;
+      latest[key] = { ...b, name:newName, phone:newPhone, email:newEmail, comment:newComment, courtesy:newCourtesy, listPrice, price:newPrice };
+      ref = latest[key];
+    }
+  });
+
+  await saveCourtBookings(dateStr, latest);
+  // Mantener sincronizado el índice de la app de videos con los nuevos datos.
+  if(ref && ref.codigo_video){
+    await saveVideoIndex(ref.codigo_video, {
+      codigo_video: ref.codigo_video, fecha: dateStr, court: ref.court,
+      startTime: ref.startTime, endTime: ref.endTime, bookingType: ref.bookingType,
+      groupId: ref.groupId, name: ref.name, phone: ref.phone,
+      trainer: ref.trainer, players: ref.players,
+    });
+  }
+
+  state.courtBookings = latest;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'reserva', detalle, actor:staff, source:'panel' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  showToast('Reserva actualizada.');
+  closeModal();
+}
+async function editBlockTitle(groupId, newTitle){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId===groupId){
+      if(!detalle) detalle = `Bloqueo "${b.title}" → "${newTitle}"`;
+      latest[key] = { ...b, title:newTitle };
+    }
+  });
+
+  await saveCourtBookings(dateStr, latest);
+
+  state.courtBookings = latest;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'bloqueo', detalle, actor:staff, source:'panel' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  showToast('Bloqueo actualizado.');
+  closeModal();
+}
+async function cancelGroup(groupId){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  const codigosVideo = new Set();
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId === groupId){
+      if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime} (${b.name})`;
+      if(b.codigo_video) codigosVideo.add(b.codigo_video);
+      delete latest[key];
+    }
+  });
+  try{
+    await saveCourtBookings(dateStr, latest);
+    for(const cv of codigosVideo){ await deleteVideoIndex(cv); }
+    state.courtBookings = latest;
+    try{
+      state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
+    }catch(e){ console.warn('No se pudo registrar el historial', e); }
+    showToast('Reserva cancelada.');
+  }catch(e){
+    showToast('No se pudo cancelar. Intenta de nuevo.');
+  }
+  render();
+}
+/* ---------- SESIÓN: sobrevivir a recargas de la página ----------
+   No podemos usar localStorage/sessionStorage (prohibido en artefactos de Claude),
+   así que usamos el almacenamiento propio de Claude en modo "personal" (shared:false).
+   Si el navegador recarga la página, esto evita tener que reescribir los códigos
+   cada vez. No hay garantía absoluta de que persista siempre (depende de cómo
+   Claude relacione el almacenamiento personal con tu sesión/navegador), pero
+   como mucho no hace nada — nunca empeora lo que ya había. */
+async function saveSessionState(){
+  try{
+    if(!window.storage) return;
+    await window.storage.set('session-state', JSON.stringify({
+      appUnlocked: state.appUnlocked, isAdmin: state.isAdmin, staffName: state.staffName
+    }), false);
+  }catch(e){ /* no es crítico si falla */ }
+}
+async function trySessionRestore(){
+  try{
+    if(window.__authExpired && window.__authExpired()){
+      if(window.__clearAppCode) window.__clearAppCode();
+      try{ await clearSessionState(); }catch(e){}
+      return;   // pasaron >10 h: forzar el candado, se vuelve a pedir el código
+    }
+    const res = await window.storage.get('session-state', false);
+    if(!res) return;
+    const data = JSON.parse(res.value);
+    if(data.appUnlocked) state.appUnlocked = true;
+    if(data.isAdmin){ state.isAdmin = true; state.staffName = data.staffName || 'Staff'; }
+  }catch(e){ /* no había sesión guardada */ }
+}
+async function clearSessionState(){
+  try{ if(window.storage) await window.storage.delete('session-state', false); }catch(e){}
+}
+
+function tryAdminLogin(pin, name){
+  if(pin === ADMIN_PIN){
+    state.isAdmin = true; state.staffName = name || 'Staff';
+    saveSessionState();
+    render();
+  }
+  else { showToast('PIN incorrecto.'); }
+}
+
+/* ---------- RENDER: CANDADO DE LA APP ---------- */
+function renderLockScreen(){
+  document.getElementById('tabsNav').innerHTML = '';
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="admin-login" style="margin-top:60px;">
+      <h2 class="section-title">Acceso privado</h2>
+      <p>Esta app es de uso interno de Bahía Padel. Ingresa tu nombre de usuario y el código de acceso para continuar.</p>
+      <div class="field"><input type="text" id="appUserInput" placeholder="Usuario (tu nombre)"></div>
+      <div class="field"><input type="password" id="appCodeInput" placeholder="Código de acceso"></div>
+      <button class="btn-confirm" id="appCodeSubmit">Entrar</button>
+    </div>
+  `;
+  const bannerWrap = document.getElementById('waBannerWrap');
+  if(bannerWrap) bannerWrap.innerHTML = '';
+  const submit = document.getElementById('appCodeSubmit');
+  const userInput = document.getElementById('appUserInput');
+  const input = document.getElementById('appCodeInput');
+  const tryUnlock = async ()=>{
+    const intento = (input.value || '').trim();
+    if(!intento){ showToast('Escribe el código.'); return; }
+    if(submit){ submit.disabled = true; submit.textContent = 'Comprobando…'; }
+    try{
+      window.__setAppCode(intento);
+      await window.__api('auth', {});
+      // Si el servidor tiene SESSION_SECRET, cambiamos el código por un token
+      // con caducidad. Si no, seguimos con el código como hasta ahora.
+      try{
+        const ses = await window.__api('login', {});
+        if(ses && ses.token){ window.__useSession(ses.token); }
+      }catch(e){ /* sin token: se sigue usando el código */ }
+    }catch(err){
+      window.__clearAppCode();
+      showToast(err && err.noAuth ? 'Código incorrecto.' : ('No se pudo conectar. ' + (err.message||'')));
+      if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
+      return;
+    }
+    if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
+    state.appUnlocked = true;
+    window.__setLoginAt();   // inicia el reloj de 10 h al ingresar el código
+    state.staffName = userInput.value.trim() || 'Usuario';
+    await saveSessionState();
+    state.clients = await loadClients();
+    render();
+    await loadDateData();
+    startPolling();
+  };
+  if(submit) submit.addEventListener('click', tryUnlock);
+  if(input) input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+  if(userInput) userInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+}
+
+/* ---------- RENDER: NAV ---------- */
+function renderNav(){
+  const nav = document.getElementById('tabsNav');
+  const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'] ];
+  nav.innerHTML = tabs.map(([id,label]) =>
+    `<button class="tab-btn ${state.tab===id?'active':''}" data-tab="${id}">${label}</button>`
+  ).join('') + `<button class="tab-btn lock-btn" id="lockAppBtn" title="Bloquear la app en este equipo">🔒</button>`;
+  nav.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
+    btn.addEventListener('click', ()=> selectTab(btn.dataset.tab));
+  });
+  const lockBtn = document.getElementById('lockAppBtn');
+  if(lockBtn) lockBtn.addEventListener('click', ()=>{
+    state.appUnlocked = false;
+    state.isAdmin = false;
+    stopPolling();
+    clearSessionState();
+    if(window.__clearAppCode) window.__clearAppCode();
+    render();
+  });
+}
+
+/* ---------- RENDER: DATE PILLS ---------- */
+function renderDatePills(){
+  return `<div class="date-row" id="dateRow">
+    ${state.dates.map((d,i)=>`
+      <button class="date-pill ${sameDay(d,state.selectedDate)?'active':''}" data-idx="${i}">
+        <span class="dow">${DOW_LABELS[d.getDay()]}</span>
+        <span class="dnum">${d.getDate()}</span>
+      </button>
+    `).join('')}
+  </div>`;
+}
+function bindDatePills(){
+  document.querySelectorAll('.date-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=> selectDate(state.dates[Number(btn.dataset.idx)]));
+  });
+}
+
+/* ---------- RENDER: CANCHA TAB ---------- */
+function renderCanchaTab(){
+  const rows = TIME_SLOTS.map(time => `
+    <div class="court-row">
+      <div class="time-cell">${time}</div>
+      ${COURTS.map(court => {
+        const key = `${time}|${court}`;
+        const booking = state.courtBookings[key];
+        if(booking){
+          const type = booking.bookingType || 'cancha';
+          let icon, extraClass, label;
+          if(type==='cancha'){ icon='🔒'; extraClass=''; label = booking.name; }
+          else if(type==='clase'){ icon='🧑‍🏫'; extraClass=' slot-class'; label = booking.name; }
+          else { icon='🚫'; extraClass=' slot-block'; label = booking.title || 'Bloqueo'; }
+          const titleAttr = (type==='bloqueo' ? booking.title : booking.name) + (booking.comment ? ' — ' + booking.comment : '');
+          if(booking.startTime===time){
+            return `<div class="slot-cell"><div class="slot-taken${extraClass}" title="${esc(titleAttr)}">${icon} ${esc(label)}</div></div>`;
+          }
+          return `<div class="slot-cell"><div class="slot-taken slot-taken-continue${extraClass}"></div></div>`;
+        }
+        if(isPastSlot(time)){
+          return `<div class="slot-cell"><div class="slot-past">🕐</div></div>`;
+        }
+        return `<div class="slot-cell"><button class="slot-btn" data-time="${time}" data-court="${esc(court)}">Libre -${priceShortLabel(courtSlotPrice(time)*2)}</button></div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Reservar</h2>
+        <p class="section-sub">Elige un horario libre y reserva cancha o clase con entrenador · pago en sitio.</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+    </div>
+    <div class="legend">
+      <span><span class="dot free"></span>Libre</span>
+      <span><span class="dot occ"></span>Cancha ocupada</span>
+      <span><span class="dot class"></span>Clase con entrenador</span>
+      <span><span class="dot block"></span>Bloqueada</span>
+      <span><span class="dot past"></span>Ya pasó</span>
+    </div>
+    ${renderDatePills()}
+    <div class="court-scroll">
+      <div class="court-grid" style="--ncourts:${COURTS.length}">
+        <div class="court-head-row">
+          <div class="time-cell" style="border-right:1px solid var(--line);"></div>
+          ${COURTS.map(c=>{
+            const pct = courtOccupancyPercent(c);
+            return `<div class="court-head-cell">
+              <span class="cname">${esc(c)}</span>
+              <span class="occ-badge ${occBadgeClass(pct)}">${pct}% ocupada</span>
+            </div>`;
+          }).join('')}
+        </div>
+        ${rows}
+      </div>
+    </div>
+  `;
+}
+function bindCanchaTab(){
+  document.querySelectorAll('.slot-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openSlotModal(btn.dataset.time, btn.dataset.court));
+  });
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+}
+
+/* ---------- RENDER: CLASES TAB (solo consulta, agenda de entrenadores) ---------- */
+function renderClasesTab(){
+  const dateStr = fmtDate(state.selectedDate);
+  const seenGroups = new Set();
+  const allClasses = [];
+  Object.values(state.courtBookings).forEach(b=>{
+    if(!b || (b.bookingType||'cancha')!=='clase') return;
+    if(seenGroups.has(b.groupId)) return;
+    seenGroups.add(b.groupId);
+    allClasses.push(b);
+  });
+  allClasses.sort((a,b)=> a.startTime.localeCompare(b.startTime));
+  const filtered = state.trainerFilter==='todos' ? allClasses : allClasses.filter(c=>c.trainer===state.trainerFilter);
+
+  const listHtml = filtered.length===0
+    ? `<div class="empty-note">Sin clases programadas ${state.trainerFilter==='todos'?'':'para '+esc(state.trainerFilter)+' '}el ${dateStr}.</div>`
+    : filtered.map(c=>`
+      <div class="class-row">
+        <div class="class-row-time">${c.startTime}–${c.endTime}</div>
+        <div class="class-row-info">
+          <div class="who">${esc(c.trainer)} <span class="type-tag clase">Clase</span></div>
+          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · 📝 '+esc(c.comment) : ''}</div>
+        </div>
+        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    `).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Clases del día</h2>
+        <p class="section-sub">Vista de consulta para entrenadores. La programación se hace desde la pestaña Cancha.</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+    </div>
+    ${renderDatePills()}
+    <div class="duration-options" style="margin-bottom:18px;">
+      <button class="dur-pill ${state.trainerFilter==='todos'?'active':''}" data-trainer-filter="todos">Todos</button>
+      ${TRAINERS.map(t=>`<button class="dur-pill ${state.trainerFilter===t?'active':''}" data-trainer-filter="${esc(t)}">${esc(t)}</button>`).join('')}
+    </div>
+    ${listHtml}
+  `;
+}
+function bindClasesTab(){
+  document.querySelectorAll('[data-trainer-filter]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.trainerFilter = btn.dataset.trainerFilter;
+      render();
+    });
+  });
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+}
+
+/* ---------- RENDER: PANEL (ADMIN) ---------- */
+function renderHistory(){
+  const items = [...state.history].sort((a,b)=>b.ts-a.ts);
+  if(items.length===0) return `<p class="empty-note">Sin movimientos registrados este día.</p>`;
+  return items.map(h=>{
+    const time = new Date(h.ts).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit', hour12:false});
+    const badgeClass = h.action==='creada' ? 'badge-teal' : h.action==='cancelada' ? 'badge-coral' : 'badge-amber';
+    const actionLabel = h.action==='creada'?'Creada':h.action==='cancelada'?'Cancelada':'Modificada';
+    return `<div class="history-item">
+      <span class="history-time">${time}</span>
+      <span class="history-badge ${badgeClass}">${actionLabel}</span>
+      <span class="history-detail">${esc(h.detalle||'')}</span>
+      <span class="history-actor">${esc(h.actor)} · ${h.source==='cliente'?'cliente':'staff'}</span>
+    </div>`;
+  }).join('');
+}
+function renderPanelTab(){
+  if(!state.isAdmin){
+    return `
+      <div class="admin-login">
+        <h2 class="section-title">Panel</h2>
+        <p>Ingresa tu nombre y el PIN para entrar. Tu nombre queda registrado en el historial.</p>
+        <div class="field"><input type="text" id="staffNameInput" placeholder="Tu nombre" value="${esc(state.staffName||'')}"></div>
+        <div class="field"><input type="password" id="pinInput" placeholder="PIN" inputmode="numeric"></div>
+        <button class="btn-confirm" id="pinSubmit">Entrar</button>
+      </div>
+    `;
+  }
+  const dateStr = fmtDate(state.selectedDate);
+  const seenGroups = new Set();
+  const entries = [];
+  Object.values(state.courtBookings).forEach(b=>{
+    if(!b || seenGroups.has(b.groupId)) return;
+    seenGroups.add(b.groupId);
+    entries.push(b);
+  });
+  entries.sort((a,b)=> a.startTime.localeCompare(b.startTime));
+  window.__adminAll = entries;
+  const totalRevenue = entries.reduce((sum,e)=> sum + (e.price||0), 0);
+
+  const listHtml = entries.length===0
+    ? `<div class="empty-note">Sin reservas para el ${dateStr}.</div>`
+    : entries.map((e,i)=>{
+        const type = e.bookingType || 'cancha';
+        let label, metaLine, waButton = '';
+        if(type==='cancha'){
+          label = `${e.court} · ${e.startTime}–${e.endTime}`;
+          metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildCourtWhatsAppMessage(e.name, e.court, dateStr, e.startTime, e.endTime, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
+        } else if(type==='clase'){
+          label = `Clase con ${e.trainer} · ${e.court} · ${e.startTime}–${e.endTime} · ${e.players}p`;
+          metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildClaseWhatsAppMessage(e.name, e.trainer, e.court, dateStr, e.startTime, e.endTime, e.players, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
+        } else {
+          label = `${e.court} · ${e.startTime}–${e.endTime}`;
+          metaLine = `${esc(label)} · Bloqueado por ${esc(e.name)}`;
+        }
+        if(e.comment){ metaLine += ` · 📝 ${esc(e.comment)}`; }
+        const courtesyTag = (e.courtesy && e.courtesy!=='none')
+          ? `<span class="type-tag courtesy">${e.courtesy==='full'?'Cortesía completa':'Cortesía 1/4'}</span>` : '';
+        const seriesButton = (type==='bloqueo' && e.seriesMeta && e.seriesMeta.intervalDays)
+          ? `<button class="cancel-link" data-admin-series-idx="${i}">Cancelar serie</button>` : '';
+        return `
+        <div class="admin-list-item">
+          <div>
+            <div class="who">${type==='bloqueo' ? esc(e.title) : esc(e.name)} <span class="type-tag ${type}">${type==='cancha'?'Cancha':type==='clase'?'Clase':'Bloqueo'}</span>${courtesyTag}</div>
+            <div class="meta">${metaLine}</div>
+          </div>
+          <div class="admin-actions">
+            ${waButton}
+            <button class="edit-link" data-admin-idx="${i}">Editar</button>
+            <button class="cancel-link" data-admin-cancel-idx="${i}">Cancelar</button>
+            ${seriesButton}
+          </div>
+        </div>`;
+      }).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Panel de reservas</h2>
+        <p class="section-sub">Sesión: ${esc(state.staffName)} · ingresos estimados del día: ${formatCOP(totalRevenue)}</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+    </div>
+    ${renderDatePills()}
+    <button class="block-open-btn" id="openBlockBtn">+ Crear bloqueo recurrente</button>
+
+    <div class="panel-subhead">Métricas y reportes</div>
+    <div class="metrics-box">
+      <div class="metrics-dates">
+        <div class="field"><label for="metricsStart">Desde</label><input type="date" id="metricsStart" value="${metricsRange.start || dateStr}"></div>
+        <div class="field"><label for="metricsEnd">Hasta</label><input type="date" id="metricsEnd" value="${metricsRange.end || dateStr}"></div>
+      </div>
+      <div class="metrics-buttons">
+        <button id="exportTomasBtn">⬇ Clases de Tomás (CSV)</button>
+        <button id="exportIsaiasBtn">⬇ Clases de Isaías (CSV)</button>
+        <button id="exportCanchaBtn">⬇ Reservas de cancha (CSV)</button>
+      </div>
+    </div>
+
+    <div class="panel-subhead">Reservas del día</div>
+    ${listHtml}
+    <div class="panel-subhead">Historial de movimientos</div>
+    ${renderHistory()}
+  `;
+}
+function bindPanelTab(){
+  if(!state.isAdmin){
+    const submit = document.getElementById('pinSubmit');
+    const pinInput = document.getElementById('pinInput');
+    const nameInput = document.getElementById('staffNameInput');
+    if(submit) submit.addEventListener('click', ()=> tryAdminLogin(pinInput.value, nameInput.value.trim()));
+    if(pinInput) pinInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryAdminLogin(pinInput.value, nameInput.value.trim()); });
+    return;
+  }
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+  const openBlockBtn = document.getElementById('openBlockBtn');
+  if(openBlockBtn) openBlockBtn.addEventListener('click', openBlockModal);
+
+  document.querySelectorAll('[data-admin-idx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminIdx)];
+      openEditModal(e);
+    });
+  });
+  document.querySelectorAll('[data-admin-cancel-idx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminCancelIdx)];
+      if(!confirm('¿Cancelar esta reserva?')) return;
+      cancelGroup(e.groupId);
+    });
+  });
+  document.querySelectorAll('[data-admin-series-idx]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminSeriesIdx)];
+      if(!confirm('¿Cancelar TODAS las fechas de este bloqueo recurrente?')) return;
+      const removed = await cancelSeries(e.seriesId, e.seriesMeta);
+      showToast(`Serie cancelada en ${removed} fecha(s).`);
+      await loadDateData();
+    });
+  });
+
+  const metricsStart = document.getElementById('metricsStart');
+  const metricsEnd = document.getElementById('metricsEnd');
+  if(metricsStart) metricsStart.addEventListener('change', ()=>{ metricsRange.start = metricsStart.value; });
+  if(metricsEnd) metricsEnd.addEventListener('change', ()=>{ metricsRange.end = metricsEnd.value; });
+  function getRange(){
+    if(!metricsStart || !metricsEnd) return null;
+    const s = metricsStart.value, e = metricsEnd.value;
+    if(!s || !e){ showToast('Elige fecha de inicio y de fin.'); return null; }
+    if(s > e){ showToast('La fecha de inicio debe ser antes de la fecha fin.'); return null; }
+    const days = (new Date(e) - new Date(s)) / 86400000;
+    if(days > 366){ showToast('El rango es muy amplio (máximo 1 año).'); return null; }
+    return { s, e };
+  }
+  async function runExport(filterFn, columns, filenamePrefix, btn){
+    const r = getRange();
+    if(!r) return;
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Generando…';
+    try{
+      const rows = await gatherRangeEntries(r.s, r.e, filterFn);
+      downloadCSV(`${filenamePrefix}-${r.s}_a_${r.e}.csv`, toCSV(rows, columns));
+      showToast(`Se descargaron ${rows.length} registro(s).`);
+    }catch(e){
+      showToast('No se pudo generar el archivo.');
+    }
+    btn.disabled = false; btn.textContent = original;
+  }
+  const exportTomasBtn = document.getElementById('exportTomasBtn');
+  if(exportTomasBtn) exportTomasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Tomás', CLASE_CSV_COLUMNS, 'clases-Tomas', exportTomasBtn));
+  const exportIsaiasBtn = document.getElementById('exportIsaiasBtn');
+  if(exportIsaiasBtn) exportIsaiasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Isaías', CLASE_CSV_COLUMNS, 'clases-Isaias', exportIsaiasBtn));
+  const exportCanchaBtn = document.getElementById('exportCanchaBtn');
+  if(exportCanchaBtn) exportCanchaBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='cancha', CANCHA_CSV_COLUMNS, 'reservas-cancha', exportCanchaBtn));
+
+}
+
+/* ---------- RENDER: CONTENIDO DEL MODAL ---------- */
+function renderTypeStep(m){
+  return `
+    <h3>${esc(m.court)} · ${m.time}</h3>
+    <p class="modal-sub">¿Qué deseas reservar en este horario?</p>
+    <div class="type-options">
+      <button class="type-card" data-booking-type="cancha">
+        <span class="type-icon">🎾</span>
+        <span class="type-label">Cancha</span>
+        <span class="type-sub">Juego libre</span>
+      </button>
+      <button class="type-card" data-booking-type="clase">
+        <span class="type-icon">🧑‍🏫</span>
+        <span class="type-label">Clase</span>
+        <span class="type-sub">Con entrenador</span>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+    </div>
+  `;
+}
+function renderCanchaSummaryStep(m){
+  const maxSlots = maxAvailableSlots(m.time, m.court);
+  const opts = DURATIONS.filter(d=>d.slots<=maxSlots);
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const price = courtPriceForRange(m.time, bookingFlow.duration);
+  return `
+    <h3>Reservar ${esc(m.court)}</h3>
+    <p class="modal-sub">${fmtDate(state.selectedDate)} · desde ${m.time}</p>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${opts.map(d=>`<label class="dur-pill ${d.slots===bookingFlow.duration?'active':''}"><input type="radio" name="duration" value="${d.slots}" ${d.slots===bookingFlow.duration?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="summary-line">${m.time}–${endTime} · ${formatCOP(price)}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="toFormBtn">Continuar</button>
+    </div>
+  `;
+}
+function renderClaseSummaryStep(m){
+  const maxSlots = maxAvailableSlots(m.time, m.court);
+  const opts = DURATIONS.filter(d=>d.slots<=maxSlots);
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const price = classPriceForRange(bookingFlow.players, bookingFlow.duration);
+  return `
+    <h3>Clase con entrenador</h3>
+    <p class="modal-sub">${esc(m.court)} · ${fmtDate(state.selectedDate)} · desde ${m.time}</p>
+    <div class="field"><label>Entrenador</label><div class="duration-options">
+      ${TRAINERS.map(t=>`<label class="dur-pill ${t===bookingFlow.trainer?'active':''}"><input type="radio" name="trainer" value="${esc(t)}" ${t===bookingFlow.trainer?'checked':''}><span>${esc(t)}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${opts.map(d=>`<label class="dur-pill ${d.slots===bookingFlow.duration?'active':''}"><input type="radio" name="duration" value="${d.slots}" ${d.slots===bookingFlow.duration?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Número de jugadores</label><div class="duration-options">
+      ${[1,2,3,4].map(n=>`<label class="dur-pill ${n===bookingFlow.players?'active':''}"><input type="radio" name="players" value="${n}" ${n===bookingFlow.players?'checked':''}><span>${n}</span></label>`).join('')}
+    </div></div>
+    <div class="summary-line">${m.time}–${endTime} · ${formatCOP(price)}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="toFormBtn">Continuar</button>
+    </div>
+  `;
+}
+function renderFormStep(m){
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const listPrice = bookingFlow.bookingType==='cancha'
+    ? courtPriceForRange(m.time,bookingFlow.duration)
+    : classPriceForRange(bookingFlow.players,bookingFlow.duration);
+  const finalPrice = listPrice * discountFactor(bookingFlow.courtesy);
+  const baseLine = bookingFlow.bookingType==='cancha'
+    ? `${m.court} · ${m.time}–${endTime}`
+    : `${bookingFlow.trainer} · ${m.court} · ${m.time}–${endTime} · ${bookingFlow.players} jugador(es)`;
+  const priceLine = (bookingFlow.courtesy && bookingFlow.courtesy!=='none')
+    ? `${formatCOP(finalPrice)} (cortesía · lista ${formatCOP(listPrice)})`
+    : formatCOP(finalPrice);
+  const courtesyBlock = state.isAdmin ? `
+    <div class="field"><label>Cortesía (staff)</label><div class="duration-options">
+      <label class="dur-pill ${bookingFlow.courtesy==='none'?'active':''}"><input type="radio" name="courtesy" value="none" ${bookingFlow.courtesy==='none'?'checked':''}><span>Sin cortesía</span></label>
+      <label class="dur-pill ${bookingFlow.courtesy==='quarter'?'active':''}"><input type="radio" name="courtesy" value="quarter" ${bookingFlow.courtesy==='quarter'?'checked':''}><span>Cortesía 1/4</span></label>
+      <label class="dur-pill ${bookingFlow.courtesy==='full'?'active':''}"><input type="radio" name="courtesy" value="full" ${bookingFlow.courtesy==='full'?'checked':''}><span>Cortesía completa</span></label>
+    </div></div>` : '';
+  return `
+    <h3>Tus datos</h3>
+    <p class="modal-sub">${baseLine} · ${priceLine}</p>
+    <div class="field" style="position:relative;">
+      <label for="nameInput">Nombre</label>
+      <input type="text" id="nameInput" placeholder="Ej. Laura" autocomplete="off">
+      <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" placeholder="Ej. Gómez"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" placeholder="Ej. 300 123 4567" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" placeholder="Ej. laura@correo.com"></div>
+    <div class="field"><label for="commentInput">Comentario (opcional)</label><input type="text" id="commentInput" placeholder="Ej. cumpleaños, trae su raqueta..."></div>
+    ${courtesyBlock}
+    <p class="pay-note">💳 Pago en el club</p>
+    <label class="legal-check"><input type="checkbox" id="legalDatos"><span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 (Habeas Data - Colombia), para efectos de esta reserva y contacto por parte del club.</span></label>
+    <label class="legal-check"><input type="checkbox" id="legalExoneracion"><span>Declaro que participo en la actividad deportiva bajo mi propia responsabilidad y exonero a Bahía Padel de responsabilidad por lesiones derivadas de la práctica.</span></label>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="modalConfirm" disabled>Confirmar reserva</button>
+    </div>
+  `;
+}
+function renderEditStep(m){
+  const label = m.bookingType==='cancha' ? `Cancha · ${m.court}` : `Clase con ${m.trainer} · ${m.court}`;
+  const parts = (m.prefillName||'').trim().split(/\s+/).filter(Boolean);
+  const prefillNombre = parts[0] || '';
+  const prefillApellido = parts.slice(1).join(' ');
+  const courtesy = m.prefillCourtesy || 'none';
+  return `
+    <h3>Editar reserva</h3>
+    <p class="modal-sub">${esc(label)} · ${m.startTime}–${m.endTime}</p>
+    <div class="field" style="position:relative;">
+      <label for="nameInput">Nombre</label>
+      <input type="text" id="nameInput" value="${esc(prefillNombre)}" autocomplete="off">
+      <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" value="${esc(prefillApellido)}"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" value="${esc(m.prefillPhone||'')}" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" value="${esc(m.prefillEmail||'')}"></div>
+    <div class="field"><label for="commentInput">Comentario</label><input type="text" id="commentInput" value="${esc(m.prefillComment||'')}"></div>
+    <div class="field"><label>Cortesía</label><div class="duration-options">
+      <label class="dur-pill ${courtesy==='none'?'active':''}"><input type="radio" name="editCourtesy" value="none" ${courtesy==='none'?'checked':''}><span>Sin cortesía</span></label>
+      <label class="dur-pill ${courtesy==='quarter'?'active':''}"><input type="radio" name="editCourtesy" value="quarter" ${courtesy==='quarter'?'checked':''}><span>Cortesía 1/4</span></label>
+      <label class="dur-pill ${courtesy==='full'?'active':''}"><input type="radio" name="editCourtesy" value="full" ${courtesy==='full'?'checked':''}><span>Cortesía completa</span></label>
+    </div></div>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Guardar cambios</button>
+    </div>
+  `;
+}
+function renderEditBlockStep(m){
+  return `
+    <h3>Editar bloqueo</h3>
+    <p class="modal-sub">${esc(m.court)} · ${m.startTime}–${m.endTime}</p>
+    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" value="${esc(m.prefillTitle||'')}"></div>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Guardar cambios</button>
+    </div>
+  `;
+}
+function renderBlockFormStep(){
+  return `
+    <h3>Crear bloqueo</h3>
+    <p class="modal-sub">Reserva el horario para mantenimiento, eventos, torneos, etc. Se repite si lo indicas.</p>
+    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" placeholder="Ej. Mantenimiento, Torneo interno"></div>
+    <div class="field"><label>Cancha</label><div class="duration-options">
+      ${COURTS.map(c=>`<label class="dur-pill ${blockForm.court===c?'active':''}"><input type="radio" name="blockCourt" value="${esc(c)}" ${blockForm.court===c?'checked':''}><span>${esc(c)}</span></label>`).join('')}
+      <label class="dur-pill ${blockForm.court==='__all__'?'active':''}"><input type="radio" name="blockCourt" value="__all__" ${blockForm.court==='__all__'?'checked':''}><span>Todas</span></label>
+    </div></div>
+    <div class="field"><label for="blockDateInput">Fecha de inicio</label><input type="date" id="blockDateInput" value="${blockForm.startDate}"></div>
+    <div class="field"><label for="blockTimeInput">Hora de inicio</label>
+      <select id="blockTimeInput">
+        ${TIME_SLOTS.map(t=>`<option value="${t}" ${t===blockForm.startTime?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${DURATIONS.map(d=>`<label class="dur-pill ${blockForm.duration===d.slots?'active':''}"><input type="radio" name="blockDuration" value="${d.slots}" ${blockForm.duration===d.slots?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Repetición</label><div class="duration-options">
+      <label class="dur-pill ${blockForm.recurrence==='once'?'active':''}"><input type="radio" name="blockRecurrence" value="once" ${blockForm.recurrence==='once'?'checked':''}><span>Solo este día</span></label>
+      <label class="dur-pill ${blockForm.recurrence==='weekly'?'active':''}"><input type="radio" name="blockRecurrence" value="weekly" ${blockForm.recurrence==='weekly'?'checked':''}><span>Cada semana</span></label>
+      <label class="dur-pill ${blockForm.recurrence==='daily'?'active':''}"><input type="radio" name="blockRecurrence" value="daily" ${blockForm.recurrence==='daily'?'checked':''}><span>Cada día</span></label>
+    </div></div>
+    ${blockForm.recurrence!=='once' ? `<div class="field"><label for="blockOccurrencesInput">Número de repeticiones</label><input type="number" id="blockOccurrencesInput" min="1" max="52" value="${blockForm.occurrences}"></div>` : ''}
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="createBlockBtn">Crear bloqueo</button>
+    </div>
+  `;
+}
+function renderModalContent(){
+  const m = state.modal;
+  if(!m) return '';
+  if(m.type==='court-flow'){
+    if(bookingFlow.step==='type') return renderTypeStep(m);
+    if(bookingFlow.step==='summary') return bookingFlow.bookingType==='cancha' ? renderCanchaSummaryStep(m) : renderClaseSummaryStep(m);
+    if(bookingFlow.step==='form') return renderFormStep(m);
+  }
+  if(m.type==='edit') return renderEditStep(m);
+  if(m.type==='edit-block') return renderEditBlockStep(m);
+  if(m.type==='block') return renderBlockFormStep();
+  return '';
+}
+function renderModal(){
+  if(!state.modal) return '';
+  return `<div class="overlay" id="overlay"><div class="modal">${renderModalContent()}</div></div>`;
+}
+function updateModalDOM(){
+  const modalEl = document.querySelector('.modal');
+  if(!modalEl) return;
+  modalEl.innerHTML = renderModalContent();
+  bindModalContent();
+}
+function bindClientAutocomplete(){
+  const nameInputEl = document.getElementById('nameInput');
+  const suggestBox = document.getElementById('clientSuggestions');
+  const phoneInputEl = document.getElementById('phoneInput');
+  const suggestBoxPhone = document.getElementById('clientSuggestionsPhone');
+
+  function fillFromClient(c){
+    if(nameInputEl) nameInputEl.value = c.nombre || '';
+    const apEl = document.getElementById('apellidoInput'); if(apEl) apEl.value = c.apellido||'';
+    if(phoneInputEl) phoneInputEl.value = c.phone||'';
+    const emEl = document.getElementById('emailInput'); if(emEl) emEl.value = c.email||'';
+  }
+  function renderSuggestions(box, matches){
+    if(matches.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+    box.innerHTML = matches.map((c,idx)=>`
+      <div class="client-suggestion-item" data-suggest-idx="${idx}">
+        <div class="csi-name">${esc(c.nombre)} ${esc(c.apellido||'')}</div>
+        <div class="csi-phone">${esc(c.phone||'')}</div>
+      </div>
+    `).join('');
+    box.style.display = 'block';
+    box.querySelectorAll('[data-suggest-idx]').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        fillFromClient(matches[Number(item.dataset.suggestIdx)]);
+        box.style.display = 'none'; box.innerHTML='';
+      });
+    });
+  }
+
+  if(nameInputEl && suggestBox){
+    nameInputEl.addEventListener('input', ()=>{
+      const q = nameInputEl.value.trim().toLowerCase();
+      if(q.length < 2){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.nombre||'').toLowerCase().startsWith(q)).slice(0,6);
+      renderSuggestions(suggestBox, matches);
+    });
+    nameInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBox.style.display='none'; }, 150); });
+  }
+
+  if(phoneInputEl && suggestBoxPhone){
+    phoneInputEl.addEventListener('input', ()=>{
+      const q = phoneInputEl.value.replace(/\D/g,'');
+      if(q.length < 3){ suggestBoxPhone.style.display='none'; suggestBoxPhone.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.phone||'').replace(/\D/g,'').includes(q)).slice(0,6);
+      renderSuggestions(suggestBoxPhone, matches);
+    });
+    phoneInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBoxPhone.style.display='none'; }, 150); });
+  }
+}
+function bindModalContent(){
+  const cancelBtn = document.getElementById('modalCancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  bindClientAutocomplete();
+
+  const backBtn = document.getElementById('backBtn');
+  if(backBtn){
+    backBtn.addEventListener('click', ()=>{
+      if(bookingFlow.step==='summary') bookingFlow.step = 'type';
+      else if(bookingFlow.step==='form') bookingFlow.step = 'summary';
+      updateModalDOM();
+    });
+  }
+
+  document.querySelectorAll('[data-booking-type]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      bookingFlow.bookingType = btn.dataset.bookingType;
+      bookingFlow.step = 'summary';
+      updateModalDOM();
+    });
+  });
+
+  document.querySelectorAll('.dur-pill').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const input = p.querySelector('input');
+      if(!input) return;
+      input.checked = true;
+      if(input.name==='editCourtesy'){
+        const group = p.closest('.duration-options');
+        if(group) group.querySelectorAll('.dur-pill').forEach(x=>x.classList.remove('active'));
+        p.classList.add('active');
+        return;
+      }
+      if(input.name==='duration') bookingFlow.duration = Number(input.value);
+      else if(input.name==='trainer') bookingFlow.trainer = input.value;
+      else if(input.name==='players') bookingFlow.players = Number(input.value);
+      else if(input.name==='courtesy') bookingFlow.courtesy = input.value;
+      else if(input.name==='blockCourt') blockForm.court = input.value;
+      else if(input.name==='blockDuration') blockForm.duration = Number(input.value);
+      else if(input.name==='blockRecurrence') blockForm.recurrence = input.value;
+      updateModalDOM();
+    });
+  });
+
+  const toFormBtn = document.getElementById('toFormBtn');
+  if(toFormBtn){
+    toFormBtn.addEventListener('click', ()=>{
+      bookingFlow.step = 'form';
+      updateModalDOM();
+    });
+  }
+
+  const legalDatos = document.getElementById('legalDatos');
+  const legalExoneracion = document.getElementById('legalExoneracion');
+  if(legalDatos && legalExoneracion){
+    const sync = ()=>{ document.getElementById('modalConfirm').disabled = !(legalDatos.checked && legalExoneracion.checked); };
+    legalDatos.addEventListener('change', sync);
+    legalExoneracion.addEventListener('change', sync);
+  }
+
+  const confirmBtn = document.getElementById('modalConfirm');
+  if(confirmBtn){
+    confirmBtn.addEventListener('click', async ()=>{
+      const m = state.modal;
+      const errEl = document.getElementById('modalError');
+      if(errEl) errEl.style.display = 'none';
+      const original = confirmBtn.textContent;
+
+      if(m.type==='court-flow'){
+        const nombre = document.getElementById('nameInput').value.trim();
+        const apellido = document.getElementById('apellidoInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const commentEl = document.getElementById('commentInput');
+        const comment = commentEl ? commentEl.value.trim() : '';
+        if(!nombre || !apellido || !phone || !email){
+          if(errEl){ errEl.textContent = 'Completa nombre, apellido, teléfono y correo.'; errEl.style.display = 'block'; }
+          return;
+        }
+        if(!/^\S+@\S+\.\S+$/.test(email)){
+          if(errEl){ errEl.textContent = 'Ingresa un correo válido.'; errEl.style.display = 'block'; }
+          return;
+        }
+        const name = `${nombre} ${apellido}`.trim();
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{
+          await confirmSlotBooking(m.time, m.court, bookingFlow, name, phone, email, comment);
+          await upsertClient(nombre, apellido, phone, email);
+          render();
+        }catch(err){ showToast('No se pudo guardar. Revisa tu conexión e intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
+      } else if(m.type==='edit'){
+        const nombre = document.getElementById('nameInput').value.trim();
+        const apellido = document.getElementById('apellidoInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const commentEl = document.getElementById('commentInput');
+        const comment = commentEl ? commentEl.value.trim() : '';
+        const courtesyRadio = document.querySelector('input[name="editCourtesy"]:checked');
+        const courtesy = courtesyRadio ? courtesyRadio.value : 'none';
+        if(!nombre || !apellido || !phone){
+          if(errEl){ errEl.textContent = 'Completa nombre, apellido y teléfono.'; errEl.style.display = 'block'; }
+          return;
+        }
+        const name = `${nombre} ${apellido}`.trim();
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{
+          await editBooking(m.groupId, name, phone, email, comment, courtesy);
+          await upsertClient(nombre, apellido, phone, email);
+          render();
+        }catch(err){ showToast('No se pudo guardar. Intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
+      } else if(m.type==='edit-block'){
+        const title = document.getElementById('titleInput').value.trim();
+        if(!title){
+          if(errEl){ errEl.textContent = 'Escribe un título para el bloqueo.'; errEl.style.display = 'block'; }
+          return;
+        }
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{ await editBlockTitle(m.groupId, title); render(); }
+        catch(err){ showToast('No se pudo guardar. Intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+      }
+    });
+  }
+
+  const createBlockBtn = document.getElementById('createBlockBtn');
+  if(createBlockBtn){
+    createBlockBtn.addEventListener('click', async ()=>{
+      const errEl = document.getElementById('modalError');
+      if(errEl) errEl.style.display = 'none';
+      const title = document.getElementById('titleInput').value.trim();
+      const startDate = document.getElementById('blockDateInput').value;
+      const startTime = document.getElementById('blockTimeInput').value;
+      const occInput = document.getElementById('blockOccurrencesInput');
+      const occurrences = occInput ? Math.max(1, Number(occInput.value)||1) : 1;
+      if(!title){
+        if(errEl){ errEl.textContent = 'Escribe un título para el bloqueo.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if(!startDate){
+        if(errEl){ errEl.textContent = 'Elige una fecha de inicio.'; errEl.style.display = 'block'; }
+        return;
+      }
+      const original = createBlockBtn.textContent;
+      createBlockBtn.disabled = true;
+      createBlockBtn.textContent = 'Creando…';
+      try{
+        const result = await createRecurringBlock(title, blockForm.court, startDate, startTime, blockForm.duration, blockForm.recurrence, occurrences);
+        let msg = `Bloqueo creado en ${result.created} fecha(s).`;
+        if(result.skippedDates.length) msg += ` ${result.skippedDates.length} con conflicto.`;
+        showToast(msg);
+        closeModal();
+        await loadDateData();
+      }catch(err){
+        showToast('No se pudo crear el bloqueo. Intenta de nuevo.');
+        createBlockBtn.disabled = false;
+        createBlockBtn.textContent = original;
+      }
+    });
+  }
+}
+function bindModal(){
+  const overlay = document.getElementById('overlay');
+  if(!overlay) return;
+  overlay.addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+  bindModalContent();
+}
+
+/* ---------- RENDER: BANNER WHATSAPP ---------- */
+function renderConfirmBanner(){
+  if(!state.lastConfirmation) return '';
+  return `<div class="wa-banner">
+    <span>✅ Reserva guardada</span>
+    <a class="wa-btn" href="${buildWhatsAppLink(state.lastConfirmation.phone, state.lastConfirmation.message)}" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>
+    <button class="wa-dismiss" id="waDismiss">✕</button>
+  </div>`;
+}
+
+/* ---------- RENDER PRINCIPAL ---------- */
+function render(){
+  if(!state.appUnlocked){ renderLockScreen(); return; }
+  renderNav();
+  const app = document.getElementById('app');
+  if(state.loading){
+    app.innerHTML = `<div class="loading-note">Cargando reservas…</div>`;
+  } else {
+    let html;
+    if(state.tab==='cancha') html = renderCanchaTab();
+    else if(state.tab==='clases') html = renderClasesTab();
+    else html = renderPanelTab();
+
+    app.innerHTML = html + renderModal();
+
+    bindDatePills();
+    if(state.tab==='cancha') bindCanchaTab();
+    else if(state.tab==='clases') bindClasesTab();
+    else bindPanelTab();
+    bindModal();
+  }
+
+  const bannerWrap = document.getElementById('waBannerWrap');
+  bannerWrap.innerHTML = renderConfirmBanner();
+  const dismissBtn = document.getElementById('waDismiss');
+  if(dismissBtn) dismissBtn.addEventListener('click', ()=>{ state.lastConfirmation=null; render(); });
+}
+
+/* ---------- INIT ---------- */
+(async function init(){
+  initDates();
+  await trySessionRestore();
+  // Validamos la sesión restaurada contra el servidor: si el token caducó (o el
+  // código ya no vale), volvemos a la pantalla de entrada en vez de mostrar
+  // datos vacíos. Solo un 401 fuerza el bloqueo; un fallo de red no.
+  if(state.appUnlocked){
+    try{ await window.__api('auth', {}); }
+    catch(err){
+      if(err && err.noAuth){
+        state.appUnlocked = false; state.isAdmin = false;
+        await clearSessionState();
+        if(window.__clearAppCode) window.__clearAppCode();
+      }
+    }
+  }
+  render();
+  if(state.appUnlocked){
+    state.clients = await loadClients();
+    await loadDateData();
+    startPolling();
+  }
+})();
+</script>
+</body>
+</html>
