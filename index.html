@@ -531,7 +531,7 @@ function nuevoCodigoVideo(){
   return `BP-${t}${s}`;
 }
 function lineaVideo(codigo){
-  return codigo ? `\nCódigo de video: ${codigo}\nMirá el video de tu partido acá: https://padelreplay.netlify.app/?codigo=${codigo}` : '';
+  return codigo ? `\nCódigo de video: ${codigo}` : '';
 }
 function buildCourtWhatsAppMessage(name, court, dateStr, start, end, codigoVideo){
   return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos en cancha!`;
