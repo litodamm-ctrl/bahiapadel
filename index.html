@@ -229,6 +229,17 @@
   var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
   var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
   var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
+  var LOGIN_AT_KEY = "bpsc:loginAt";       // cuándo se ingresó el código (corte a 10 h)
+  var AUTH_MAX_MS  = 10 * 60 * 60 * 1000;  // 10 horas
+  window.__setLoginAt = function(){
+    try { localStorage.setItem(LOGIN_AT_KEY, String(Date.now())); } catch(e){}
+  };
+  window.__authExpired = function(){
+    try {
+      var t = parseInt(localStorage.getItem(LOGIN_AT_KEY) || "0", 10);
+      return !t || (Date.now() - t) > AUTH_MAX_MS;
+    } catch(e){ return true; }
+  };
 
   window.__appCode = null;
   window.__appToken = null;
@@ -250,7 +261,7 @@
   window.__clearAppCode = function(){
     window.__appCode = null;
     window.__appToken = null;
-    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); } catch(e){}
+    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); } catch(e){}
   };
 
   async function api(action, extra){
@@ -648,8 +659,23 @@ async function loadDateData(){
 }
 
 /* ---------- ACTUALIZACIÓN AUTOMÁTICA ENTRE EQUIPOS ---------- */
+var authTimer = null;
+function startAuthWatch(){
+  if(authTimer) return;
+  authTimer = setInterval(()=>{
+    if(state.appUnlocked && window.__authExpired && window.__authExpired()){
+      state.appUnlocked = false; state.isAdmin = false;
+      stopPolling(); clearSessionState();
+      if(window.__clearAppCode) window.__clearAppCode();
+      render();
+      showToast('Tu sesión expiró (10 h). Ingresa el código de acceso de nuevo.');
+    }
+  }, 60000);
+}
+function stopAuthWatch(){ if(authTimer){ clearInterval(authTimer); authTimer = null; } }
 function startPolling(){
   if(pollTimer) return;
+  startAuthWatch();
   pollTimer = setInterval(async ()=>{
     if(!state.appUnlocked || state.modal || document.hidden) return; // no interrumpe formularios abiertos
     if(state.tab === 'panel') return; // el Panel tiene sus propios formularios (fechas de métricas, login) que no deben resetearse solos
@@ -661,6 +687,7 @@ function startPolling(){
 }
 function stopPolling(){
   if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  stopAuthWatch();
 }
 async function manualRefresh(){
   if(state.modal) return;
@@ -762,12 +789,36 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:flow.bookingType, detalle, actor: state.staffName || name, source:'cliente' });
   }catch(e){ console.warn('No se pudo registrar el historial', e); }
 
-  const msg = flow.bookingType==='cancha'
+  let msg = flow.bookingType==='cancha'
     ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
     : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
+  try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
   state.lastConfirmation = { phone, message: msg };
   showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
+}
+
+/* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
+async function bloquePremioGanado(phone, nombre){
+  if(!phone) return "";
+  const cli = String(phone).replace(/\D/g,"");
+  const r = await fetch("/.netlify/functions/loyalty", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.pendiente_aviso", code: window.__appCode || "", cliente_id: cli })
+  });
+  if(!r.ok) return "";
+  const data = await r.json();
+  const premios = (data && data.premios) || [];
+  if(!premios.length) return "";
+  const p = premios[premios.length-1];
+  fetch("/.netlify/functions/loyalty", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.marcar_avisado", code: window.__appCode || "", codigo_unico: p.codigo_unico }) });
+  const partes = String(p.mes).split("-").map(Number);
+  const ultimo = new Date(partes[0], partes[1], 0);
+  const venc = String(ultimo.getDate()).padStart(2,'0')+"/"+String(partes[1]).padStart(2,'0')+"/"+partes[0];
+  return "\n\n🎉 ¡Felicidades "+ (nombre||"") +"! Con tus reservas de este mes ganaste: "+ p.premio +
+         ".\nTu código de premio: "+ p.codigo_unico +
+         "\nMuéstralo en recepción para reclamarlo. Vence el "+ venc +".";
 }
 
 /* ---------- ACCIÓN: crear bloqueo recurrente ---------- */
@@ -959,6 +1010,11 @@ async function saveSessionState(){
 }
 async function trySessionRestore(){
   try{
+    if(window.__authExpired && window.__authExpired()){
+      if(window.__clearAppCode) window.__clearAppCode();
+      try{ await clearSessionState(); }catch(e){}
+      return;   // pasaron >10 h: forzar el candado, se vuelve a pedir el código
+    }
     const res = await window.storage.get('session-state', false);
     if(!res) return;
     const data = JSON.parse(res.value);
@@ -1018,6 +1074,7 @@ function renderLockScreen(){
     }
     if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
     state.appUnlocked = true;
+    window.__setLoginAt();   // inicia el reloj de 10 h al ingresar el código
     state.staffName = userInput.value.trim() || 'Usuario';
     await saveSessionState();
     state.clients = await loadClients();
