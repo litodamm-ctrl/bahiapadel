@@ -1,17 +1,22 @@
 [build]
-  publish = "."
-  functions = "netlify/functions"
+publish = "."
+functions = "netlify/functions"
 
 [functions]
-  node_bundler = "esbuild"
+node_bundler = "esbuild"
 
 # Cron diario (01:00 America/Bogotá = 06:00 UTC): emite y vence premios.
 [functions."loyaltycron"]
-  schedule = "0 6 * * *"
+schedule = "0 6 * * *"
+
+# Cron diario (09:00 America/Bogotá = 14:00 UTC): correo del día siguiente
+# con resumen del partido + video + premiación + reactivación.
+[functions."correo-diario"]
+schedule = "0 14 * * *"
 
 [[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
+for = "/*"
+[headers.values]
+X-Frame-Options = "SAMEORIGIN"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
