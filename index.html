@@ -55,6 +55,16 @@
   .date-pill .dnum{font-family:var(--font-display); font-size:22px; line-height:1.1; margin-top:2px;}
   .date-pill.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .date-pill:hover:not(.active){border-color:var(--bay-teal);}
+.date-pill.past{background:var(--past); border-color:transparent; color:var(--past-ink);}
+.date-pill.past.active{background:var(--bay-deep); border-color:var(--bay-deep); color:var(--white);}
+.date-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px;}
+.date-nav-btn{background:var(--white); border:1.5px solid var(--line); color:var(--bay-deep); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:700; line-height:1; white-space:nowrap;}
+.date-nav-btn:hover{border-color:var(--bay-teal); background:var(--bay-teal-light);}
+.date-nav-btn.alert{border-color:var(--coral); color:var(--coral-dark);}
+.date-nav-jump{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft);}
+.date-nav-jump input{border:1.5px solid var(--line); border-radius:10px; padding:6px 9px; font-family:inherit; font-size:13px; color:var(--ink); background:var(--white);}
+.date-nav-label{margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.5px;}
+@media (max-width:520px){ .date-nav-label{margin-left:0; width:100%;} }
 
   .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   h2.section-title{font-family:var(--font-display); font-size:26px; letter-spacing:0.5px; margin:0 0 4px;}
@@ -443,10 +453,48 @@ function fmtDate(d){
 function sameDay(a,b){ return fmtDate(a)===fmtDate(b); }
 function initDates(){
   const today = new Date(); today.setHours(0,0,0,0);
+  setDateWindow(today);
+  state.selectedDate = state.dates[0];
+}
+/* Tira de 14 días que empieza en `inicio`. El resto de la app sigue leyendo
+   state.dates, así que mover la ventana no afecta a nada más. */
+function setDateWindow(inicio){
+  const base = new Date(inicio); base.setHours(0,0,0,0);
   const arr = [];
-  for(let i=0;i<14;i++){ const d=new Date(today); d.setDate(today.getDate()+i); arr.push(d); }
+  for(let i=0;i<14;i++){ const d=new Date(base); d.setDate(base.getDate()+i); arr.push(d); }
   state.dates = arr;
-  state.selectedDate = arr[0];
+}
+function esFechaPasada(d){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const x = new Date(d); x.setHours(0,0,0,0);
+  return x.getTime() < hoy.getTime();
+}
+/* Mueve la tira N días y selecciona el primer día del tramo nuevo. */
+async function shiftDateWindow(dias){
+  const base = new Date(state.dates[0]); base.setDate(base.getDate()+dias);
+  setDateWindow(base);
+  state.selectedDate = state.dates[0];
+  await loadDateData();
+}
+/* Salta a cualquier fecha, también de meses o años anteriores. La tira
+   arranca 3 días antes para poder mirar alrededor. */
+async function goToDate(dateStr){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr||'')) return;
+  const [y,m,dd] = dateStr.split('-').map(Number);
+  const objetivo = new Date(y, m-1, dd);
+  const inicio = new Date(objetivo); inicio.setDate(objetivo.getDate()-3);
+  setDateWindow(inicio);
+  state.selectedDate = objetivo;
+  await loadDateData();
+}
+/* Vuelve a la ventana por defecto: hoy + 13 días. */
+async function resetDateWindow(){
+  initDates();
+  await loadDateData();
+}
+function etiquetaMes(d){
+  try{ return d.toLocaleDateString('es-CO',{ month:'long', year:'numeric' }); }
+  catch(e){ return fmtDate(d).slice(0,7); }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -473,7 +521,10 @@ function maxAvailableSlots(time, court){
   return count;
 }
 function isPastSlot(time){
-  if(!sameDay(state.selectedDate, new Date())) return false;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const sel = new Date(state.selectedDate); sel.setHours(0,0,0,0);
+  if(sel.getTime() < hoy.getTime()) return true;   // día ya pasado: nada es reservable
+  if(sel.getTime() > hoy.getTime()) return false;  // día futuro: todo disponible
   const now = new Date();
   const [h,m] = time.split(':').map(Number);
   const slotDateTime = new Date(state.selectedDate);
@@ -1212,9 +1263,21 @@ function renderNav(){
 
 /* ---------- RENDER: DATE PILLS ---------- */
 function renderDatePills(){
-  return `<div class="date-row" id="dateRow">
+  const sel = state.selectedDate;
+  const hoyEnLaTira = state.dates.some(d => sameDay(d, new Date()));
+  return `
+  <div class="date-nav">
+    <button class="date-nav-btn" id="dateBack" title="Retrocede 14 días">◀ Antes</button>
+    <label class="date-nav-jump" for="dateJump">Ir a
+      <input type="date" id="dateJump" value="${fmtDate(sel)}">
+    </label>
+    <button class="date-nav-btn" id="dateFwd" title="Avanza 14 días">Después ▶</button>
+    <button class="date-nav-btn${hoyEnLaTira ? '' : ' alert'}" id="dateToday" title="Volver a la ventana por defecto">Hoy</button>
+    <span class="date-nav-label">${esc(etiquetaMes(sel))}</span>
+  </div>
+  <div class="date-row" id="dateRow">
     ${state.dates.map((d,i)=>`
-      <button class="date-pill ${sameDay(d,state.selectedDate)?'active':''}" data-idx="${i}">
+      <button class="date-pill ${sameDay(d,sel)?'active':''} ${esFechaPasada(d)?'past':''}" data-idx="${i}" title="${fmtDate(d)}">
         <span class="dow">${DOW_LABELS[d.getDay()]}</span>
         <span class="dnum">${d.getDate()}</span>
       </button>
@@ -1225,6 +1288,14 @@ function bindDatePills(){
   document.querySelectorAll('.date-pill').forEach(btn=>{
     btn.addEventListener('click', ()=> selectDate(state.dates[Number(btn.dataset.idx)]));
   });
+  const back = document.getElementById('dateBack');
+  if(back) back.addEventListener('click', ()=> shiftDateWindow(-14));
+  const fwd = document.getElementById('dateFwd');
+  if(fwd) fwd.addEventListener('click', ()=> shiftDateWindow(14));
+  const hoy = document.getElementById('dateToday');
+  if(hoy) hoy.addEventListener('click', resetDateWindow);
+  const jump = document.getElementById('dateJump');
+  if(jump) jump.addEventListener('change', ()=> goToDate(jump.value));
 }
 
 /* ---------- RENDER: CANCHA TAB ---------- */
