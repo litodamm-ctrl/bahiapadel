@@ -617,34 +617,6 @@ async function deleteVideoIndex(codigo){
     await window.storage.delete(`video:${codigo}`, true);
   }catch(e){ console.warn('No se pudo borrar el índice de video', e); }
 }
-/* ---------- Confirmación inmediata por correo ----------
-Se dispara al crear la reserva, en el mismo momento que el mensaje de
-WhatsApp, para que el jugador reciba su código de video ahora y no al día
-siguiente. Devuelve los enlaces de calendario que armó el servidor.
-Es best-effort a propósito: si el correo falla, la reserva ya quedó guardada
-y la confirmación de WhatsApp sale igual. Nunca rompe la reserva. */
-  async function enviarConfirmacion(reserva, accion){
-    try{
-      const r = await fetch('/.netlify/functions/confirmacion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: window.__appCode || '',
-          token: window.__appToken || undefined,
-          action: accion || 'crear',
-          reserva: reserva
-        })
-      });
-      const data = await r.json().catch(function(){ return null; });
-      if(!r.ok || !data){ console.warn('Confirmacion: respuesta inesperada del servidor', r.status); return null; }
-      if(data.error_correo) console.warn('Confirmacion: el correo no salio -', data.error_correo);
-      else if(data.aviso) console.warn('Confirmacion:', data.aviso);
-      return data;
-    }catch(e){
-      console.warn('No se pudo enviar la confirmacion por correo', e);
-      return null;
-    }
-  }
   async function appendHistory(dateStr, event){
   const hist = await loadHistory(dateStr);
   hist.push(event);
@@ -821,16 +793,6 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
     ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
     : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
   try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
-  // Correo de confirmación con la invitación de calendario. Sale AHORA, junto
-  // con el WhatsApp: el jugador recibe su código de video en el momento de
-  // reservar, no a las 9:00 del día siguiente.
-  const confirmacion = await enviarConfirmacion(Object.assign({}, bookingInfo, { fecha: dateStr }), 'crear');
-  if(confirmacion && confirmacion.gcal){
-    msg += '\n\nAgrégala a tu calendario: ' + confirmacion.gcal;
-  }
-  if(confirmacion && confirmacion.correo_enviado){
-    msg += '\nTambién te la enviamos por correo a ' + bookingInfo.email + '.';
-  }
   state.lastConfirmation = { phone, message: msg };
   showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
