@@ -229,7 +229,8 @@
   var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
   var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
   var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
-  var LOGIN_AT_KEY = "bpsc:loginAt";       // cuándo se ingresó el código (corte a 10 h)
+  var LOGIN_AT_KEY = "bpsc:loginAt";
+  var ADMIN_KEY     = "bpsc:admin";      // token del Panel (el PIN lo valida el servidor)       // cuándo se ingresó el código (corte a 10 h)
   var AUTH_MAX_MS  = 10 * 60 * 60 * 1000;  // 10 horas
   window.__setLoginAt = function(){
     try { localStorage.setItem(LOGIN_AT_KEY, String(Date.now())); } catch(e){}
@@ -261,7 +262,7 @@
   window.__clearAppCode = function(){
     window.__appCode = null;
     window.__appToken = null;
-    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); } catch(e){}
+    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); localStorage.removeItem(ADMIN_KEY); } catch(e){}
   };
 
   async function api(action, extra){
@@ -287,6 +288,20 @@
     return await r.json();
   }
   window.__api = api;
+
+  /* ── Token del Panel ──
+     El PIN ya NO vive en el navegador: lo valida kv.js (action "admin.login")
+     contra ADMIN_PIN / ADMIN_PINS de Netlify. Aquí solo se guarda el token
+     firmado que devuelve el servidor, para no volver a pedirlo al recargar. */
+  window.__adminToken = null;
+  try { window.__adminToken = localStorage.getItem(ADMIN_KEY); } catch(e){}
+  window.__setAdminToken = function(t){
+    window.__adminToken = t || null;
+    try {
+      if (t) localStorage.setItem(ADMIN_KEY, t);
+      else   localStorage.removeItem(ADMIN_KEY);
+    } catch(e){}
+  };
 
   function sesionLeer(){
     try { var v = localStorage.getItem(SESS_KEY); return v ? { key:"session-state", value:v } : null; }
@@ -349,8 +364,8 @@ const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
 // ---- Códigos de acceso: cámbialos aquí por los que quieras usar en el club ----
 /* El código de entrada ya NO está aquí: lo valida el servidor contra la
    variable APP_ACCESS_CODE de Netlify (ver netlify/functions/kv.js). */
-const ADMIN_PIN = '0293'; // OJO: sigue en el navegador, cualquiera puede verlo en el código fuente.
-                          // Pendiente de mover al servidor como se hizo con el código de entrada.
+/* El PIN del Panel tampoco está aquí: lo valida el servidor contra
+   ADMIN_PIN (o ADMIN_PINS, "david:1234,sary:5678") en Netlify. Ver kv.js. */
 // --------------------------------------------------------------------------------
 
 const DOW_LABELS = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
@@ -1057,7 +1072,7 @@ async function saveSessionState(){
   try{
     if(!window.storage) return;
     await window.storage.set('session-state', JSON.stringify({
-      appUnlocked: state.appUnlocked, isAdmin: state.isAdmin, staffName: state.staffName
+      appUnlocked: state.appUnlocked, staffName: state.staffName
     }), false);
   }catch(e){ /* no es crítico si falla */ }
 }
@@ -1072,20 +1087,50 @@ async function trySessionRestore(){
     if(!res) return;
     const data = JSON.parse(res.value);
     if(data.appUnlocked) state.appUnlocked = true;
-    if(data.isAdmin){ state.isAdmin = true; state.staffName = data.staffName || 'Staff'; }
+    if(data.staffName) state.staffName = data.staffName;
+      state.isAdmin = await verificarAdmin();
   }catch(e){ /* no había sesión guardada */ }
 }
 async function clearSessionState(){
   try{ if(window.storage) await window.storage.delete('session-state', false); }catch(e){}
 }
 
-function tryAdminLogin(pin, name){
-  if(pin === ADMIN_PIN){
-    state.isAdmin = true; state.staffName = name || 'Staff';
-    saveSessionState();
+async function tryAdminLogin(pin, name){
+  const btn = document.getElementById('pinSubmit');
+  const original = btn ? btn.textContent : 'Entrar';
+  if(btn){ btn.disabled = true; btn.textContent = 'Comprobando…'; }
+  try{
+    const r = await window.__api('admin.login', { pin: String(pin || '').trim() });
+    if(!r || !r.ok) throw new Error('PIN incorrecto.');
+    window.__setAdminToken(r.adminToken || null);
+    state.isAdmin = true;
+    state.staffName = name || 'Staff';
+    await saveSessionState();
+    if(!r.adminToken) showToast('Panel abierto. Sin SESSION_SECRET habrá que repetir el PIN al recargar.');
     render();
+  }catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = original; }
+    const m = (err && err.message) || '';
+    if(err && err.noAuth)      showToast('Tu sesión expiró. Vuelve a entrar con el código de acceso.');
+    else if(m.indexOf('403') > -1) showToast('PIN incorrecto.');
+    else                       showToast(m || 'No se pudo comprobar el PIN.');
   }
-  else { showToast('PIN incorrecto.'); }
+}
+
+/* ¿La sesión de Panel guardada sigue siendo válida? Lo decide el servidor.
+   Sin confirmación NO se abre el Panel: nunca elevamos privilegios por lo que
+   diga el navegador. */
+async function verificarAdmin(){
+  if(!window.__adminToken) return false;
+  try{
+    const r = await window.__api('admin.verify', { adminToken: window.__adminToken });
+    if(r && r.ok) return true;
+    window.__setAdminToken(null);
+    return false;
+  }catch(e){
+    if(e && e.noAuth) window.__setAdminToken(null);
+    return false;
+  }
 }
 
 /* ---------- RENDER: CANDADO DE LA APP ---------- */
