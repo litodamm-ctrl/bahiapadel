@@ -793,9 +793,58 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
     ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
     : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
   try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
-  state.lastConfirmation = { phone, message: msg };
+  state.lastConfirmation = { phone, message: msg, email, groupId, estadoInvitacion: 'enviando' };
+  enviarConfirmacion('crear', {
+    groupId, fecha: dateStr, startTime: time, endTime, court, name, phone, email,
+    bookingType: flow.bookingType, trainer: bookingInfo.trainer,
+    players: bookingInfo.players, codigo_video: codigoVideo
+  });
   showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
+}
+
+/* ---------- INVITACIÓN DE CALENDARIO + WHATSAPP ----------
+   Al confirmar / editar / cancelar una reserva llamamos a
+   /.netlify/functions/confirmacion, que manda por correo la invitación .ics
+   (Google Calendar, Apple Calendar, Outlook) y nos devuelve el texto ya listo
+   para WhatsApp con el enlace de calendario incluido.
+   Es best-effort: si falla, la reserva YA quedó guardada y no se rompe nada. */
+async function enviarConfirmacion(accion, reserva){
+  try{
+    const r = await fetch('/.netlify/functions/confirmacion', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: accion,
+        code:  window.__appCode  || '',
+        token: window.__appToken || '',
+        reserva: reserva
+      })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+    if(accion === 'cancelar') return data;
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){
+      if(data.wa_text) c.message = data.wa_text;
+      c.gcal = data.gcal || null;
+      c.estadoInvitacion = (data.correo_enviado || data.repetido) ? 'enviado'
+                         : (data.aviso ? 'sin-correo' : 'error');
+      render();
+    }
+    return data;
+  }catch(e){
+    console.warn('No se pudo enviar la invitación de calendario', e);
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){ c.estadoInvitacion = 'error'; render(); }
+  }
+}
+function estadoInvitacionTexto(){
+  const c = state.lastConfirmation;
+  if(!c || !c.estadoInvitacion) return '';
+  if(c.estadoInvitacion === 'enviando')   return ' · 📧 enviando invitación…';
+  if(c.estadoInvitacion === 'enviado')    return ' · 📅 invitación enviada a ' + esc(c.email || '');
+  if(c.estadoInvitacion === 'sin-correo') return ' · ⚠️ sin correo válido';
+  return ' · ⚠️ no se pudo enviar el correo';
 }
 
 /* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
@@ -941,6 +990,7 @@ async function editBooking(groupId, newName, newPhone, newEmail, newComment, new
   try{
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'reserva', detalle, actor:staff, source:'panel' });
   }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  if(ref) enviarConfirmacion('actualizar', Object.assign({}, ref, { fecha: dateStr }));
   showToast('Reserva actualizada.');
   closeModal();
 }
@@ -972,11 +1022,13 @@ async function cancelGroup(groupId){
   const latest = await loadCourtBookings(dateStr);
   let detalle = '';
   const codigosVideo = new Set();
+  let refCancel = null;
   Object.keys(latest).forEach(key=>{
     const b = latest[key];
     if(b && b.groupId === groupId){
       if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime} (${b.name})`;
       if(b.codigo_video) codigosVideo.add(b.codigo_video);
+      if(!refCancel) refCancel = Object.assign({}, b, { fecha: dateStr });
       delete latest[key];
     }
   });
@@ -987,6 +1039,7 @@ async function cancelGroup(groupId){
     try{
       state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
     }catch(e){ console.warn('No se pudo registrar el historial', e); }
+    if(refCancel) enviarConfirmacion('cancelar', refCancel);
     showToast('Reserva cancelada.');
   }catch(e){
     showToast('No se pudo cancelar. Intenta de nuevo.');
@@ -1859,8 +1912,9 @@ function bindModal(){
 function renderConfirmBanner(){
   if(!state.lastConfirmation) return '';
   return `<div class="wa-banner">
-    <span>✅ Reserva guardada</span>
+    <span>✅ Reserva guardada${estadoInvitacionTexto()}</span>
     <a class="wa-btn" href="${buildWhatsAppLink(state.lastConfirmation.phone, state.lastConfirmation.message)}" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>
+    ${state.lastConfirmation.gcal ? `<a class="wa-btn" href="${state.lastConfirmation.gcal}" target="_blank" rel="noopener">📅 Añadir a calendario</a>` : ''}
     <button class="wa-dismiss" id="waDismiss">✕</button>
   </div>`;
 }
