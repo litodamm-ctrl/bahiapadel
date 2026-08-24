@@ -617,7 +617,7 @@ async function deleteVideoIndex(codigo){
     await window.storage.delete(`video:${codigo}`, true);
   }catch(e){ console.warn('No se pudo borrar el índice de video', e); }
 }
-  async function appendHistory(dateStr, event){
+async function appendHistory(dateStr, event){
   const hist = await loadHistory(dateStr);
   hist.push(event);
   if(!window.storage) throw new Error('Almacenamiento no disponible');
