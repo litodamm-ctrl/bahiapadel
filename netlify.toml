@@ -20,13 +20,3 @@ for = "/*"
 X-Frame-Options = "SAMEORIGIN"
 X-Content-Type-Options = "nosniff"
 Referrer-Policy = "strict-origin-when-cross-origin"
-
-# No servir codigo de servidor como archivo estatico.
-# confirmacion.js vivia en la raiz y se podia leer entero desde internet.
-# Ahora vive en netlify/functions/, pero dejamos la regla por si queda
-# cacheado un deploy viejo.
-[[redirects]]
-from = "/confirmacion.js"
-to = "/index.html"
-status = 404
-force = true
