@@ -1,22 +1,38 @@
 [build]
-publish = "."
-functions = "netlify/functions"
+  publish = "."
+  functions = "netlify/functions"
 
 [functions]
-node_bundler = "esbuild"
+  node_bundler = "esbuild"
 
 # Cron diario (01:00 America/Bogotá = 06:00 UTC): emite y vence premios.
 [functions."loyaltycron"]
-schedule = "0 6 * * *"
+  schedule = "0 6 * * *"
 
 # Cron diario (09:00 America/Bogotá = 14:00 UTC): correo del día siguiente
 # con resumen del partido + video + premiación + reactivación.
 [functions."correo-diario"]
-schedule = "0 14 * * *"
+  schedule = "0 14 * * *"
+
+# ── No servir código de servidor como archivo estático ──
+# publish = "." publica todo el repo. confirmacion.js vivía en la raíz y se
+# podía leer entero desde padelmanagerb.netlify.app/confirmacion.js.
+# Ahora vive en netlify/functions/, pero dejamos la regla por si queda
+# cacheado un deploy viejo.
+[[redirects]]
+  from = "/confirmacion.js"
+  to = "/index.html"
+  status = 404
+  force = true
 
 [[headers]]
-for = "/*"
-[headers.values]
-X-Frame-Options = "SAMEORIGIN"
-X-Content-Type-Options = "nosniff"
-Referrer-Policy = "strict-origin-when-cross-origin"
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store"
