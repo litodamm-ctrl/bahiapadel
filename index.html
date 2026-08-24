@@ -807,12 +807,16 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
   let msg = flow.bookingType==='cancha'
     ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
     : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
-  try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
+  let premioTxt = '';
+  try { premioTxt = await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
+  msg += premioTxt;
   state.lastConfirmation = { phone, message: msg, email, groupId, estadoInvitacion: 'enviando' };
   enviarConfirmacion('crear', {
     groupId, fecha: dateStr, startTime: time, endTime, court, name, phone, email,
     bookingType: flow.bookingType, trainer: bookingInfo.trainer,
-    players: bookingInfo.players, codigo_video: codigoVideo
+    players: bookingInfo.players, codigo_video: codigoVideo,
+    comment: comment || '', price, listPrice, courtesy,
+    duracionMin: flow.duration * 30, premio_texto: premioTxt
   });
   showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
