@@ -229,8 +229,8 @@
   var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
   var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
   var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
-  var LOGIN_AT_KEY = "bpsc:loginAt";
-  var ADMIN_KEY     = "bpsc:admin";      // token del Panel (el PIN lo valida el servidor)       // cuándo se ingresó el código (corte a 10 h)
+  var LOGIN_AT_KEY = "bpsc:loginAt"; // cuándo se ingresó el código (corte a 10 h)
+  var ADMIN_KEY    = "bpsc:admin";   // token del Panel (el PIN lo valida el servidor)
   var AUTH_MAX_MS  = 10 * 60 * 60 * 1000;  // 10 horas
   window.__setLoginAt = function(){
     try { localStorage.setItem(LOGIN_AT_KEY, String(Date.now())); } catch(e){}
