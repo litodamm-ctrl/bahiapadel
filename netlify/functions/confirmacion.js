@@ -234,22 +234,82 @@ function tituloEvento(r) {
     ? "Clase de pádel con " + (r.trainer || "entrenador") + " · " + CLUB_NAME
     : "Pádel · " + CLUB_NAME + " (" + (r.court || "cancha") + ")";
 }
+function formatCOP(n) {
+  const v = Math.round(Number(n) || 0);
+  return "$" + v.toLocaleString("es-CO");
+}
+function etiquetaCortesia(c) {
+  return c === "full" ? "Cortesía completa" : c === "quarter" ? "Cortesía 1/4" : "";
+}
+/* Duración legible. Usa duracionMin si la app la manda; si no, la deduce. */
+function duracionTexto(r) {
+  let min = Number(r.duracionMin) || 0;
+  if (!min) {
+    min = Math.max(0, Math.round((bogotaAUtc(r.fecha, r.endTime) - bogotaAUtc(r.fecha, r.startTime)) / 60000));
+  }
+  const h = Math.floor(min / 60), m = min % 60;
+  return (h ? h + " h" : "") + (h && m ? " " : "") + (m ? m + " min" : "") || "-";
+}
+/* Línea de precio: si hay cortesía se muestra también el precio de lista. */
+function precioTexto(r) {
+  if (r.price === undefined || r.price === null || r.price === "") return "";
+  const cort = etiquetaCortesia(r.courtesy);
+  const lista = Number(r.listPrice);
+  if (cort && lista && lista !== Number(r.price)) {
+    return formatCOP(r.price) + " (" + cort + " · lista " + formatCOP(lista) + ")";
+  }
+  return formatCOP(r.price) + (cort ? " (" + cort + ")" : "");
+}
+
 function descripcionEvento(r) {
   const l = [];
   l.push(r.bookingType === "clase"
     ? "Clase con " + (r.trainer || "entrenador") + (r.players ? " · " + r.players + " jugador(es)" : "")
     : "Reserva de cancha");
-  l.push((r.court || "") + " · " + r.startTime + " a " + r.endTime);
+  l.push((r.court || "") + " · " + r.startTime + " a " + r.endTime + " (" + duracionTexto(r) + ")");
+  const pr = precioTexto(r);
+  if (pr) l.push("Valor: " + pr);
   l.push("Pago en el club.");
+  if (r.name) l.push("A nombre de: " + r.name);
+  if (r.phone) l.push("Contacto: " + r.phone);
+  if (r.comment) l.push("Nota: " + r.comment);
   if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
   if (CLUB_MAPS) l.push("Cómo llegar: " + CLUB_MAPS);
   l.push(WEB_URL);
   return l.join("\n");
 }
 
+function fila(etiqueta, valor) {
+  if (valor === "" || valor === undefined || valor === null) return "";
+  return '<tr><td style="padding:3px 0;font-size:15px;color:#4B6167;white-space:nowrap;">' + etiqueta +
+         '</td><td style="padding:3px 0 3px 12px;font-size:15px;color:#14282B;font-weight:600;">' + esc(valor) + '</td></tr>';
+}
+
 function correoHtml(r, ev, gcal, outlook) {
   const nombre = (r.name || "").trim().split(/\s+/)[0] || "crack";
   const esClase = r.bookingType === "clase";
+
+  const detalle =
+    fila("📅 Fecha", fechaLarga(r.fecha)) +
+    fila("🕐 Hora", r.startTime + " – " + r.endTime + "  (" + duracionTexto(r) + ")") +
+    fila("🎾 Cancha", r.court || "") +
+    (esClase ? fila("🧑‍🏫 Entrenador", r.trainer || "") : "") +
+    (esClase && r.players ? fila("👥 Jugadores", String(r.players)) : "") +
+    fila("👤 A nombre de", r.name || "") +
+    fila("📱 Contacto", r.phone || "") +
+    fila("💵 Valor", precioTexto(r)) +
+    fila("💳 Pago", "En el club") +
+    fila("📝 Nota", r.comment || "") +
+    fila("🎬 Código de video", r.codigo_video || "");
+
+  /* Bloque de premio: el mismo texto que va por WhatsApp. */
+  const premio = String(r.premio_texto || "").trim();
+  const premioHtml = premio
+    ? '<tr><td style="padding:14px 28px 4px;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#FFF4E5;border-radius:10px;border:1px solid #FFD9A8;"><tr><td style="padding:16px 18px;font-size:15px;color:#7A4A00;line-height:1.6;">' +
+      esc(premio).replace(/\n/g, "<br>") +
+      '</td></tr></table></td></tr>'
+    : "";
+
   return '<!doctype html><html><body style="margin:0;padding:0;background:#F3E9D2;font-family:Arial,Helvetica,sans-serif;">' +
     '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F3E9D2;padding:24px 0;"><tr><td align="center">' +
     '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:14px;overflow:hidden;">' +
@@ -260,16 +320,13 @@ function correoHtml(r, ev, gcal, outlook) {
       '<p style="margin:10px 0 0;font-size:15px;color:#4B6167;line-height:1.5;">Te dejamos la invitación de calendario adjunta para que no se te pase.</p>' +
     '</td></tr>' +
     '<tr><td style="padding:16px 28px 4px;">' +
-      '<table width="100%" cellpadding="0" cellspacing="0" style="background:#DCEFEC;border-radius:10px;"><tr><td style="padding:16px 18px;font-size:15px;color:#14282B;line-height:1.8;">' +
-        '<strong style="color:#0E3B43;">' + esc(esClase ? "Clase con " + (r.trainer || "entrenador") : "Reserva de cancha") + '</strong><br>' +
-        '📅 ' + esc(fechaLarga(r.fecha)) + '<br>' +
-        '🕐 ' + esc(r.startTime) + ' – ' + esc(r.endTime) + '<br>' +
-        '🎾 ' + esc(r.court || "") +
-        (esClase && r.players ? '<br>👥 ' + esc(r.players) + ' jugador(es)' : "") +
-        (r.codigo_video ? '<br>🎬 Código de video: <strong>' + esc(r.codigo_video) + '</strong>' : "") +
-        '<br>💳 Pago en el club' +
+      '<table width="100%" cellpadding="0" cellspacing="0" style="background:#DCEFEC;border-radius:10px;"><tr><td style="padding:16px 18px;">' +
+        '<p style="margin:0 0 10px;font-size:16px;font-weight:bold;color:#0E3B43;">' +
+          esc(esClase ? "Clase con " + (r.trainer || "entrenador") : "Reserva de cancha") + '</p>' +
+        '<table cellpadding="0" cellspacing="0">' + detalle + '</table>' +
       '</td></tr></table>' +
     '</td></tr>' +
+    premioHtml +
     '<tr><td align="center" style="padding:22px 28px 6px;">' +
       '<p style="margin:0 0 12px;font-size:14px;color:#4B6167;">Añádelo a tu calendario:</p>' +
       '<a href="' + esc(gcal) + '" style="display:inline-block;background:#1F9E92;color:#fff;text-decoration:none;font-size:15px;font-weight:bold;padding:12px 24px;border-radius:10px;margin:4px;">Google Calendar</a>' +
@@ -285,14 +342,31 @@ function correoHtml(r, ev, gcal, outlook) {
 
 function correoTexto(r, gcal) {
   const nombre = (r.name || "").trim().split(/\s+/)[0] || "crack";
-  return "¡Listo " + nombre + ", tu reserva está confirmada!\n\n" +
-    (r.bookingType === "clase" ? "Clase con " + (r.trainer || "entrenador") : "Reserva de cancha") + "\n" +
-    fechaLarga(r.fecha) + "\n" + r.startTime + " a " + r.endTime + "\n" + (r.court || "") + "\n" +
-    (r.codigo_video ? "Código de video: " + r.codigo_video + "\n" : "") +
-    "Pago en el club.\n\n" +
-    "Añádelo a tu calendario: " + gcal + "\n" +
-    "(También va adjunto el archivo reserva.ics para Apple Calendar y Outlook.)\n\n" +
-    CLUB_NAME;
+  const esClase = r.bookingType === "clase";
+  const l = [];
+  l.push("¡Listo " + nombre + ", tu reserva está confirmada!");
+  l.push("");
+  l.push(esClase ? "Clase con " + (r.trainer || "entrenador") : "Reserva de cancha");
+  l.push("Fecha: " + fechaLarga(r.fecha));
+  l.push("Hora: " + r.startTime + " a " + r.endTime + " (" + duracionTexto(r) + ")");
+  l.push("Cancha: " + (r.court || ""));
+  if (esClase && r.players) l.push("Jugadores: " + r.players);
+  if (r.name) l.push("A nombre de: " + r.name);
+  if (r.phone) l.push("Contacto: " + r.phone);
+  const pr = precioTexto(r);
+  if (pr) l.push("Valor: " + pr);
+  l.push("Pago: en el club");
+  if (r.comment) l.push("Nota: " + r.comment);
+  if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
+  const premio = String(r.premio_texto || "").trim();
+  if (premio) { l.push(""); l.push(premio); }
+  l.push("");
+  l.push("Añádelo a tu calendario: " + gcal);
+  l.push("(También va adjunto el archivo reserva.ics para Apple Calendar y Outlook.)");
+  if (CLUB_MAPS) l.push("Cómo llegar: " + CLUB_MAPS);
+  l.push("");
+  l.push(CLUB_NAME);
+  return l.join("\n");
 }
 
 /* Mensaje de WhatsApp listo para wa.me (lo abre la app con un clic). */
@@ -309,14 +383,21 @@ function textoWhatsApp(r, gcal, metodo) {
   if (r.bookingType === "clase") l.push("Clase con " + (r.trainer || "entrenador"));
   l.push("Cancha: " + (r.court || ""));
   l.push("Fecha: " + fechaLarga(r.fecha));
-  l.push("Hora: " + r.startTime + " a " + r.endTime);
+  l.push("Hora: " + r.startTime + " a " + r.endTime + " (" + duracionTexto(r) + ")");
+  const pr = precioTexto(r);
+  if (pr) l.push("Valor: " + pr);
   l.push("Pago: en el club");
+  if (r.comment) l.push("Nota: " + r.comment);
   if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
   l.push("");
   l.push("Agrégala a tu calendario: " + gcal);
   if (r.email) l.push("También te enviamos la invitación a " + r.email + ".");
   l.push("");
   l.push("Te esperamos en cancha! 🎾");
+  // El bloque de premio ganado lo calcula la app (loyalty) y viaja tal cual,
+  // para que WhatsApp y el correo digan exactamente lo mismo.
+  const premio = String(r.premio_texto || "").trim();
+  if (premio) { l.push(""); l.push(premio); }
   return l.join("\n");
 }
 
@@ -456,5 +537,5 @@ exports.handler = async function (event) {
 
 /* Exporta helpers puros para pruebas locales (no afecta a Netlify). */
 if (typeof module !== "undefined") {
-  module.exports.__test = { bogotaAUtc, icsStamp, escIcs, plegar, construirIcs, linkGoogle, linkOutlook, fechaLarga, textoWhatsApp };
+  module.exports.__test = { bogotaAUtc, icsStamp, escIcs, plegar, construirIcs, linkGoogle, linkOutlook, fechaLarga, textoWhatsApp, correoHtml, correoTexto, descripcionEvento, precioTexto, duracionTexto };
 }
