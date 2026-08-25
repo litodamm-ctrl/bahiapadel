@@ -55,6 +55,16 @@
   .date-pill .dnum{font-family:var(--font-display); font-size:22px; line-height:1.1; margin-top:2px;}
   .date-pill.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .date-pill:hover:not(.active){border-color:var(--bay-teal);}
+.date-pill.past{background:var(--past); border-color:transparent; color:var(--past-ink);}
+.date-pill.past.active{background:var(--bay-deep); border-color:var(--bay-deep); color:var(--white);}
+.date-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px;}
+.date-nav-btn{background:var(--white); border:1.5px solid var(--line); color:var(--bay-deep); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:700; line-height:1; white-space:nowrap;}
+.date-nav-btn:hover{border-color:var(--bay-teal); background:var(--bay-teal-light);}
+.date-nav-btn.alert{border-color:var(--coral); color:var(--coral-dark);}
+.date-nav-jump{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft);}
+.date-nav-jump input{border:1.5px solid var(--line); border-radius:10px; padding:6px 9px; font-family:inherit; font-size:13px; color:var(--ink); background:var(--white);}
+.date-nav-label{margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.5px;}
+@media (max-width:520px){ .date-nav-label{margin-left:0; width:100%;} }
 
   .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   h2.section-title{font-family:var(--font-display); font-size:26px; letter-spacing:0.5px; margin:0 0 4px;}
@@ -229,7 +239,8 @@
   var CODE_KEY  = "bpsc:code";      // código de entrada, solo en este navegador
   var TOKEN_KEY = "bpsc:token";     // token de sesión con caducidad (si el servidor lo emite)
   var SESS_KEY  = "bpsc:session";   // sesión local, no viaja a la base de datos
-  var LOGIN_AT_KEY = "bpsc:loginAt";       // cuándo se ingresó el código (corte a 10 h)
+  var LOGIN_AT_KEY = "bpsc:loginAt"; // cuándo se ingresó el código (corte a 10 h)
+  var ADMIN_KEY    = "bpsc:admin";   // token del Panel (el PIN lo valida el servidor)
   var AUTH_MAX_MS  = 10 * 60 * 60 * 1000;  // 10 horas
   window.__setLoginAt = function(){
     try { localStorage.setItem(LOGIN_AT_KEY, String(Date.now())); } catch(e){}
@@ -261,7 +272,7 @@
   window.__clearAppCode = function(){
     window.__appCode = null;
     window.__appToken = null;
-    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); } catch(e){}
+    try { localStorage.removeItem(CODE_KEY); localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem(LOGIN_AT_KEY); localStorage.removeItem(ADMIN_KEY); } catch(e){}
   };
 
   async function api(action, extra){
@@ -287,6 +298,20 @@
     return await r.json();
   }
   window.__api = api;
+
+  /* ── Token del Panel ──
+     El PIN ya NO vive en el navegador: lo valida kv.js (action "admin.login")
+     contra ADMIN_PIN / ADMIN_PINS de Netlify. Aquí solo se guarda el token
+     firmado que devuelve el servidor, para no volver a pedirlo al recargar. */
+  window.__adminToken = null;
+  try { window.__adminToken = localStorage.getItem(ADMIN_KEY); } catch(e){}
+  window.__setAdminToken = function(t){
+    window.__adminToken = t || null;
+    try {
+      if (t) localStorage.setItem(ADMIN_KEY, t);
+      else   localStorage.removeItem(ADMIN_KEY);
+    } catch(e){}
+  };
 
   function sesionLeer(){
     try { var v = localStorage.getItem(SESS_KEY); return v ? { key:"session-state", value:v } : null; }
@@ -349,8 +374,8 @@ const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
 // ---- Códigos de acceso: cámbialos aquí por los que quieras usar en el club ----
 /* El código de entrada ya NO está aquí: lo valida el servidor contra la
    variable APP_ACCESS_CODE de Netlify (ver netlify/functions/kv.js). */
-const ADMIN_PIN = '0293'; // OJO: sigue en el navegador, cualquiera puede verlo en el código fuente.
-                          // Pendiente de mover al servidor como se hizo con el código de entrada.
+/* El PIN del Panel tampoco está aquí: lo valida el servidor contra
+   ADMIN_PIN (o ADMIN_PINS, "david:1234,sary:5678") en Netlify. Ver kv.js. */
 // --------------------------------------------------------------------------------
 
 const DOW_LABELS = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
@@ -428,10 +453,48 @@ function fmtDate(d){
 function sameDay(a,b){ return fmtDate(a)===fmtDate(b); }
 function initDates(){
   const today = new Date(); today.setHours(0,0,0,0);
+  setDateWindow(today);
+  state.selectedDate = state.dates[0];
+}
+/* Tira de 14 días que empieza en `inicio`. El resto de la app sigue leyendo
+   state.dates, así que mover la ventana no afecta a nada más. */
+function setDateWindow(inicio){
+  const base = new Date(inicio); base.setHours(0,0,0,0);
   const arr = [];
-  for(let i=0;i<14;i++){ const d=new Date(today); d.setDate(today.getDate()+i); arr.push(d); }
+  for(let i=0;i<14;i++){ const d=new Date(base); d.setDate(base.getDate()+i); arr.push(d); }
   state.dates = arr;
-  state.selectedDate = arr[0];
+}
+function esFechaPasada(d){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const x = new Date(d); x.setHours(0,0,0,0);
+  return x.getTime() < hoy.getTime();
+}
+/* Mueve la tira N días y selecciona el primer día del tramo nuevo. */
+async function shiftDateWindow(dias){
+  const base = new Date(state.dates[0]); base.setDate(base.getDate()+dias);
+  setDateWindow(base);
+  state.selectedDate = state.dates[0];
+  await loadDateData();
+}
+/* Salta a cualquier fecha, también de meses o años anteriores. La tira
+   arranca 3 días antes para poder mirar alrededor. */
+async function goToDate(dateStr){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr||'')) return;
+  const [y,m,dd] = dateStr.split('-').map(Number);
+  const objetivo = new Date(y, m-1, dd);
+  const inicio = new Date(objetivo); inicio.setDate(objetivo.getDate()-3);
+  setDateWindow(inicio);
+  state.selectedDate = objetivo;
+  await loadDateData();
+}
+/* Vuelve a la ventana por defecto: hoy + 13 días. */
+async function resetDateWindow(){
+  initDates();
+  await loadDateData();
+}
+function etiquetaMes(d){
+  try{ return d.toLocaleDateString('es-CO',{ month:'long', year:'numeric' }); }
+  catch(e){ return fmtDate(d).slice(0,7); }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -458,7 +521,10 @@ function maxAvailableSlots(time, court){
   return count;
 }
 function isPastSlot(time){
-  if(!sameDay(state.selectedDate, new Date())) return false;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const sel = new Date(state.selectedDate); sel.setHours(0,0,0,0);
+  if(sel.getTime() < hoy.getTime()) return true;   // día ya pasado: nada es reservable
+  if(sel.getTime() > hoy.getTime()) return false;  // día futuro: todo disponible
   const now = new Date();
   const [h,m] = time.split(':').map(Number);
   const slotDateTime = new Date(state.selectedDate);
@@ -792,10 +858,63 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
   let msg = flow.bookingType==='cancha'
     ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
     : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
-  try { msg += await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
-  state.lastConfirmation = { phone, message: msg };
+  let premioTxt = '';
+  try { premioTxt = await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
+  msg += premioTxt;
+  state.lastConfirmation = { phone, message: msg, email, groupId, estadoInvitacion: 'enviando' };
+  enviarConfirmacion('crear', {
+    groupId, fecha: dateStr, startTime: time, endTime, court, name, phone, email,
+    bookingType: flow.bookingType, trainer: bookingInfo.trainer,
+    players: bookingInfo.players, codigo_video: codigoVideo,
+    comment: comment || '', price, listPrice, courtesy,
+    duracionMin: flow.duration * 30, premio_texto: premioTxt
+  });
   showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
   closeModal();
+}
+
+/* ---------- INVITACIÓN DE CALENDARIO + WHATSAPP ----------
+   Al confirmar / editar / cancelar una reserva llamamos a
+   /.netlify/functions/confirmacion, que manda por correo la invitación .ics
+   (Google Calendar, Apple Calendar, Outlook) y nos devuelve el texto ya listo
+   para WhatsApp con el enlace de calendario incluido.
+   Es best-effort: si falla, la reserva YA quedó guardada y no se rompe nada. */
+async function enviarConfirmacion(accion, reserva){
+  try{
+    const r = await fetch('/.netlify/functions/confirmacion', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: accion,
+        code:  window.__appCode  || '',
+        token: window.__appToken || '',
+        reserva: reserva
+      })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+    if(accion === 'cancelar') return data;
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){
+      if(data.wa_text) c.message = data.wa_text;
+      c.gcal = data.gcal || null;
+      c.estadoInvitacion = (data.correo_enviado || data.repetido) ? 'enviado'
+                         : (data.aviso ? 'sin-correo' : 'error');
+      render();
+    }
+    return data;
+  }catch(e){
+    console.warn('No se pudo enviar la invitación de calendario', e);
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){ c.estadoInvitacion = 'error'; render(); }
+  }
+}
+function estadoInvitacionTexto(){
+  const c = state.lastConfirmation;
+  if(!c || !c.estadoInvitacion) return '';
+  if(c.estadoInvitacion === 'enviando')   return ' · 📧 enviando invitación…';
+  if(c.estadoInvitacion === 'enviado')    return ' · 📅 invitación enviada a ' + esc(c.email || '');
+  if(c.estadoInvitacion === 'sin-correo') return ' · ⚠️ sin correo válido';
+  return ' · ⚠️ no se pudo enviar el correo';
 }
 
 /* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
@@ -804,7 +923,7 @@ async function bloquePremioGanado(phone, nombre){
   const cli = String(phone).replace(/\D/g,"");
   const r = await fetch("/.netlify/functions/loyalty", {
     method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ action:"premios.pendiente_aviso", code: window.__appCode || "", cliente_id: cli })
+    body: JSON.stringify({ action:"premios.pendiente_aviso", code: window.__appCode || "", token: window.__appToken || "", cliente_id: cli })
   });
   if(!r.ok) return "";
   const data = await r.json();
@@ -812,7 +931,7 @@ async function bloquePremioGanado(phone, nombre){
   if(!premios.length) return "";
   const p = premios[premios.length-1];
   fetch("/.netlify/functions/loyalty", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ action:"premios.marcar_avisado", code: window.__appCode || "", codigo_unico: p.codigo_unico }) });
+    body: JSON.stringify({ action:"premios.marcar_avisado", code: window.__appCode || "", token: window.__appToken || "", codigo_unico: p.codigo_unico }) });
   const partes = String(p.mes).split("-").map(Number);
   const ultimo = new Date(partes[0], partes[1], 0);
   const venc = String(ultimo.getDate()).padStart(2,'0')+"/"+String(partes[1]).padStart(2,'0')+"/"+partes[0];
@@ -941,6 +1060,7 @@ async function editBooking(groupId, newName, newPhone, newEmail, newComment, new
   try{
     state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'reserva', detalle, actor:staff, source:'panel' });
   }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  if(ref) enviarConfirmacion('actualizar', Object.assign({}, ref, { fecha: dateStr }));
   showToast('Reserva actualizada.');
   closeModal();
 }
@@ -972,11 +1092,13 @@ async function cancelGroup(groupId){
   const latest = await loadCourtBookings(dateStr);
   let detalle = '';
   const codigosVideo = new Set();
+  let refCancel = null;
   Object.keys(latest).forEach(key=>{
     const b = latest[key];
     if(b && b.groupId === groupId){
       if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime} (${b.name})`;
       if(b.codigo_video) codigosVideo.add(b.codigo_video);
+      if(!refCancel) refCancel = Object.assign({}, b, { fecha: dateStr });
       delete latest[key];
     }
   });
@@ -987,6 +1109,7 @@ async function cancelGroup(groupId){
     try{
       state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
     }catch(e){ console.warn('No se pudo registrar el historial', e); }
+    if(refCancel) enviarConfirmacion('cancelar', refCancel);
     showToast('Reserva cancelada.');
   }catch(e){
     showToast('No se pudo cancelar. Intenta de nuevo.');
@@ -1004,7 +1127,7 @@ async function saveSessionState(){
   try{
     if(!window.storage) return;
     await window.storage.set('session-state', JSON.stringify({
-      appUnlocked: state.appUnlocked, isAdmin: state.isAdmin, staffName: state.staffName
+      appUnlocked: state.appUnlocked, staffName: state.staffName
     }), false);
   }catch(e){ /* no es crítico si falla */ }
 }
@@ -1019,20 +1142,50 @@ async function trySessionRestore(){
     if(!res) return;
     const data = JSON.parse(res.value);
     if(data.appUnlocked) state.appUnlocked = true;
-    if(data.isAdmin){ state.isAdmin = true; state.staffName = data.staffName || 'Staff'; }
+    if(data.staffName) state.staffName = data.staffName;
+      state.isAdmin = await verificarAdmin();
   }catch(e){ /* no había sesión guardada */ }
 }
 async function clearSessionState(){
   try{ if(window.storage) await window.storage.delete('session-state', false); }catch(e){}
 }
 
-function tryAdminLogin(pin, name){
-  if(pin === ADMIN_PIN){
-    state.isAdmin = true; state.staffName = name || 'Staff';
-    saveSessionState();
+async function tryAdminLogin(pin, name){
+  const btn = document.getElementById('pinSubmit');
+  const original = btn ? btn.textContent : 'Entrar';
+  if(btn){ btn.disabled = true; btn.textContent = 'Comprobando…'; }
+  try{
+    const r = await window.__api('admin.login', { pin: String(pin || '').trim() });
+    if(!r || !r.ok) throw new Error('PIN incorrecto.');
+    window.__setAdminToken(r.adminToken || null);
+    state.isAdmin = true;
+    state.staffName = name || 'Staff';
+    await saveSessionState();
+    if(!r.adminToken) showToast('Panel abierto. Sin SESSION_SECRET habrá que repetir el PIN al recargar.');
     render();
+  }catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = original; }
+    const m = (err && err.message) || '';
+    if(err && err.noAuth)      showToast('Tu sesión expiró. Vuelve a entrar con el código de acceso.');
+    else if(m.indexOf('403') > -1) showToast('PIN incorrecto.');
+    else                       showToast(m || 'No se pudo comprobar el PIN.');
   }
-  else { showToast('PIN incorrecto.'); }
+}
+
+/* ¿La sesión de Panel guardada sigue siendo válida? Lo decide el servidor.
+   Sin confirmación NO se abre el Panel: nunca elevamos privilegios por lo que
+   diga el navegador. */
+async function verificarAdmin(){
+  if(!window.__adminToken) return false;
+  try{
+    const r = await window.__api('admin.verify', { adminToken: window.__adminToken });
+    if(r && r.ok) return true;
+    window.__setAdminToken(null);
+    return false;
+  }catch(e){
+    if(e && e.noAuth) window.__setAdminToken(null);
+    return false;
+  }
 }
 
 /* ---------- RENDER: CANDADO DE LA APP ---------- */
@@ -1110,9 +1263,21 @@ function renderNav(){
 
 /* ---------- RENDER: DATE PILLS ---------- */
 function renderDatePills(){
-  return `<div class="date-row" id="dateRow">
+  const sel = state.selectedDate;
+  const hoyEnLaTira = state.dates.some(d => sameDay(d, new Date()));
+  return `
+  <div class="date-nav">
+    <button class="date-nav-btn" id="dateBack" title="Retrocede 14 días">◀ Antes</button>
+    <label class="date-nav-jump" for="dateJump">Ir a
+      <input type="date" id="dateJump" value="${fmtDate(sel)}">
+    </label>
+    <button class="date-nav-btn" id="dateFwd" title="Avanza 14 días">Después ▶</button>
+    <button class="date-nav-btn${hoyEnLaTira ? '' : ' alert'}" id="dateToday" title="Volver a la ventana por defecto">Hoy</button>
+    <span class="date-nav-label">${esc(etiquetaMes(sel))}</span>
+  </div>
+  <div class="date-row" id="dateRow">
     ${state.dates.map((d,i)=>`
-      <button class="date-pill ${sameDay(d,state.selectedDate)?'active':''}" data-idx="${i}">
+      <button class="date-pill ${sameDay(d,sel)?'active':''} ${esFechaPasada(d)?'past':''}" data-idx="${i}" title="${fmtDate(d)}">
         <span class="dow">${DOW_LABELS[d.getDay()]}</span>
         <span class="dnum">${d.getDate()}</span>
       </button>
@@ -1123,6 +1288,14 @@ function bindDatePills(){
   document.querySelectorAll('.date-pill').forEach(btn=>{
     btn.addEventListener('click', ()=> selectDate(state.dates[Number(btn.dataset.idx)]));
   });
+  const back = document.getElementById('dateBack');
+  if(back) back.addEventListener('click', ()=> shiftDateWindow(-14));
+  const fwd = document.getElementById('dateFwd');
+  if(fwd) fwd.addEventListener('click', ()=> shiftDateWindow(14));
+  const hoy = document.getElementById('dateToday');
+  if(hoy) hoy.addEventListener('click', resetDateWindow);
+  const jump = document.getElementById('dateJump');
+  if(jump) jump.addEventListener('change', ()=> goToDate(jump.value));
 }
 
 /* ---------- RENDER: CANCHA TAB ---------- */
@@ -1859,8 +2032,9 @@ function bindModal(){
 function renderConfirmBanner(){
   if(!state.lastConfirmation) return '';
   return `<div class="wa-banner">
-    <span>✅ Reserva guardada</span>
+    <span>✅ Reserva guardada${estadoInvitacionTexto()}</span>
     <a class="wa-btn" href="${buildWhatsAppLink(state.lastConfirmation.phone, state.lastConfirmation.message)}" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>
+    ${state.lastConfirmation.gcal ? `<a class="wa-btn" href="${state.lastConfirmation.gcal}" target="_blank" rel="noopener">📅 Añadir a calendario</a>` : ''}
     <button class="wa-dismiss" id="waDismiss">✕</button>
   </div>`;
 }

@@ -67,6 +67,59 @@ function cargarCodigos() {
 }
 const CODES = cargarCodigos();
 
+/* ── PIN del Panel (se valida AQUÍ, nunca en el navegador) ──
+   ADMIN_PIN        un PIN único para todo el club
+   ADMIN_PINS       "david:1234,sary:5678" (uno por persona; revocable individualmente)
+   ADMIN_TTL_HOURS  horas que dura la sesión de panel (def. 12) */
+function cargarPins() {
+  const map = new Map();
+  if (process.env.ADMIN_PINS) {
+    for (const par of process.env.ADMIN_PINS.split(",")) {
+      const i = par.indexOf(":");
+      if (i > 0) {
+        const usuario = par.slice(0, i).trim();
+        const pin = par.slice(i + 1).trim();
+        if (usuario && pin) map.set(usuario, pin);
+      }
+    }
+  }
+  if (process.env.ADMIN_PIN) map.set("_panel", String(process.env.ADMIN_PIN).trim());
+  return map;
+}
+const PINS = cargarPins();
+const ADMIN_TTL_HOURS = parseInt(process.env.ADMIN_TTL_HOURS || "12", 10);
+
+/* Recorre TODOS los pines sin cortocircuito para no filtrar por temporización. */
+function usuarioDePin(pin) {
+  if (!pin) return null;
+  let encontrado = null;
+  for (const [usuario, real] of PINS.entries()) {
+    if (igualSeguro(pin, real)) encontrado = usuario;
+  }
+  return encontrado;
+}
+function firmarAdmin(usuario) {
+  if (!SESSION_SECRET) return null;
+  const exp = Date.now() + ADMIN_TTL_HOURS * 3600 * 1000;
+  const payload = base64url(JSON.stringify({ u: usuario, exp, r: "panel" }));
+  const sig = base64url(crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest());
+  return payload + "." + sig;
+}
+function verificarAdmin(token) {
+  if (!SESSION_SECRET || !token || typeof token !== "string") return null;
+  const p = token.split(".");
+  if (p.length !== 2) return null;
+  const esperado = base64url(crypto.createHmac("sha256", SESSION_SECRET).update(p[0]).digest());
+  if (!igualSeguro(p[1], esperado)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(p[0].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
+    if (data.r !== "panel" || !data.exp || Date.now() > data.exp) return null;
+    return data.u || "_panel";
+  } catch (_) {
+    return null;
+  }
+}
+
 /* ── Rate limiting ── */
 const RL_MAX = 10; // intentos fallidos permitidos...
 const RL_WINDOW = 300; // ...cada 5 minutos
@@ -229,6 +282,34 @@ exports.handler = async function (event) {
   if (action === "login") {
     const t = esAdmin ? firmarToken(usuario) : null;
     return respuesta(200, { ok: true, token: t, ttlHours: SESSION_TTL_HOURS });
+  }
+
+  // ── Panel de administración ──
+  // El PIN vive en Netlify, no en el navegador. Tiene su propio contador de
+  // intentos (rl:pin:<ip>) para que un código de staff válido no lo reinicie.
+  if (action === "admin.login" || action === "admin.verify") {
+    if (!esAdmin) return respuesta(403, { error: "Solo el staff puede abrir el panel" });
+
+    if (action === "admin.verify") {
+      const u = verificarAdmin(cuerpo.adminToken);
+      return respuesta(200, u ? { ok: true, usuario: u } : { ok: false });
+    }
+
+    if (PINS.size === 0) return respuesta(500, { error: "Falta ADMIN_PIN en Netlify" });
+
+    const rlp = await rlEstado("pin:" + ip);
+    if (rlp.bloqueado) {
+      return respuesta(429, { error: "Demasiados intentos de PIN. Espera un momento." },
+        { "Retry-After": String(rlp.retryAfter) });
+    }
+
+    const u = usuarioDePin(cuerpo.pin);
+    if (!u) {
+      await rlFallo("pin:" + ip, rlp.rec);
+      return respuesta(403, { error: "PIN incorrecto" });
+    }
+    await rlLimpiar("pin:" + ip, rlp.rec);
+    return respuesta(200, { ok: true, usuario: u, adminToken: firmarAdmin(u), ttlHours: ADMIN_TTL_HOURS });
   }
 
   // Permisos de los códigos acotados (no-admin).

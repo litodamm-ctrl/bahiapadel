@@ -29,6 +29,25 @@ function cargarCodigos() {
   return set;
 }
 const CODES = cargarCodigos();
+
+/* Token de sesión firmado que emite kv.js (action:"login"). Se acepta como
+   alternativa al código: cuando kv.js entrega un token, el navegador deja de
+   guardar el código y window.__appCode queda vacío tras recargar la página. */
+const SESSION_SECRET = process.env.SESSION_SECRET || "";
+function base64url(buf) {
+  return Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function tokenValido(token) {
+  if (!SESSION_SECRET || !token || typeof token !== "string") return false;
+  const p = token.split(".");
+  if (p.length !== 2) return false;
+  const esperado = base64url(crypto.createHmac("sha256", SESSION_SECRET).update(p[0]).digest());
+  if (!igualSeguro(p[1], esperado)) return false;
+  try {
+    const data = JSON.parse(Buffer.from(p[0].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
+    return !!(data.exp && Date.now() <= data.exp);
+  } catch (_) { return false; }
+}
 function igualSeguro(a, b) {
   const ha = crypto.createHash("sha256").update(String(a || "")).digest();
   const hb = crypto.createHash("sha256").update(String(b || "")).digest();
@@ -212,22 +231,32 @@ async function premiosRecompute(mes, clienteId) {
   const usadas = reservasUsadas(docs, hoy);
   const conteo = conteoDelMes(usadas, mes);
 
+  // Una sola lectura del mes: qué hitos ya tiene cada cliente y qué códigos
+  // están tomados. Antes se releía por cliente y el contador arrancaba en el
+  // mismo número para todos (el INSERT ocurre después del bucle), así que dos
+  // clientes distintos podían recibir el MISMO codigo_unico.
+  const existentes = await selectPremios("select=cliente_id,hito,codigo_unico&mes=eq." + mes);
+  const yaTiene = new Set(existentes.map(x => x.cliente_id + "|" + x.hito));
+  const tomados = new Set(existentes.map(x => x.codigo_unico));
+
   const objetivo = clienteId ? [clienteId] : [...conteo.keys()];
+  const prefijo = mes.replace("-", "") + "-";
+  let seq = existentes.length;
+  function siguienteCodigo() {
+    let c;
+    do { seq += 1; c = prefijo + String(seq).padStart(4, "0"); } while (tomados.has(c));
+    tomados.add(c);
+    return c;
+  }
+
   const nuevos = [];
   for (const phone of objetivo) {
     const n = conteo.get(phone) || 0;
-    const alcanzados = hitosAlcanzados(n);
-    if (!alcanzados.length) continue;
-    const yaTiene = new Set((await selectPremios(
-      "select=hito&cliente_id=eq." + encodeURIComponent(phone) + "&mes=eq." + mes)).map(x => x.hito));
-    // secuencia del código dentro del mes
-    let seq = (await selectPremios("select=id&mes=eq." + mes)).length;
-    for (const h of alcanzados) {
-      if (yaTiene.has(h.n)) continue;
-      seq += 1;
+    for (const h of hitosAlcanzados(n)) {
+      if (yaTiene.has(phone + "|" + h.n)) continue;
       nuevos.push({
         cliente_id: phone, mes, hito: h.n, premio: h.premio,
-        codigo_unico: mes.replace("-", "") + "-" + String(seq).padStart(4, "0"),
+        codigo_unico: siguienteCodigo(),
         estado: "emitido", avisado: false,
       });
     }
@@ -366,7 +395,7 @@ exports.handler = async function (event) {
 
   let body;
   try { body = JSON.parse(event.body || "{}"); } catch (_) { return resp(400, { error: "JSON inválido" }); }
-  if (!codigoValido(body.code)) return resp(401, { error: "Código incorrecto" });
+  if (!codigoValido(body.code) && !tokenValido(body.token)) return resp(401, { error: "Código incorrecto" });
 
   try {
     const a = body.action;
