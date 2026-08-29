@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bahía Padel — Reservas</title>
+<meta name="theme-color" content="#0E3B43">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E3B43'/%3E%3Crect x='8' y='8' width='16' height='16' rx='2' fill='none' stroke='%23FF6A4D' stroke-width='2'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='%23FF6A4D' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="/icono-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -35,23 +39,37 @@
   input:focus-visible, button:focus-visible, select:focus-visible{outline:2px solid var(--coral); outline-offset:2px;}
   ::selection{background:var(--coral); color:var(--white);}
 
-  header{background:linear-gradient(160deg, var(--bay-deep) 0%, var(--bay-deep-2) 100%); position:relative; padding:28px 20px 46px;}
+  header{background:linear-gradient(160deg, var(--bay-deep) 0%, var(--bay-deep-2) 100%); position:relative; padding:24px 20px 24px;}
   .header-inner{max-width:960px; margin:0 auto;}
   .brand{display:flex; align-items:center; gap:10px;}
   .wordmark{font-family:var(--font-display); font-size:clamp(34px,6vw,50px); letter-spacing:1.5px; color:var(--white); line-height:1;}
-  .tagline{font-family:var(--font-mono); font-size:12px; color:#9FD4CC; letter-spacing:0.5px; margin-top:6px; text-transform:uppercase;}
+  .tagline{font-family:var(--font-mono); font-size:12px; color:#9FD4CC; letter-spacing:0.5px; text-transform:uppercase;}
+  .tagline-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:6px;}
+  .hb-chip{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:4px 11px; border-radius:999px; background:rgba(255,255,255,.1); color:#DCEFEC; border:1px solid rgba(255,255,255,.18); cursor:default;}
+  .hb-chip[hidden]{display:none;}
+  .hb-chip i{width:8px; height:8px; border-radius:50%; background:#9FB4B8; flex:none;}
+  .hb-chip.ok i{background:#2FA36B;} .hb-chip.warn i{background:#E0A100;} .hb-chip.crit i{background:var(--coral);}
+  .ic{width:16px; height:16px; vertical-align:-3px; flex:none;}
+  .slot-taken .ic{width:14px; height:14px;}
+  .type-card .ic{width:28px; height:28px; color:var(--bay-deep);}
+  .dlg-overlay{position:fixed; inset:0; background:rgba(14,59,67,0.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:200;}
+  .dlg{background:var(--white); border-radius:14px; padding:22px; max-width:380px; width:100%; box-shadow:0 12px 32px rgba(0,0,0,.22);}
+  .dlg h4{font-family:var(--font-display); font-size:22px; letter-spacing:.5px; margin:0 0 6px;}
+  .dlg p{margin:0 0 16px; color:var(--ink-soft); font-size:14px; line-height:1.45;}
+  .dlg-actions{display:flex; gap:10px; justify-content:flex-end;}
+  .dlg-actions button{min-height:44px; padding:10px 16px; border-radius:10px; font-weight:700; border:1.5px solid var(--line); background:var(--white); color:var(--ink); font-size:14px;}
+  .dlg-actions .danger{background:var(--coral); border-color:var(--coral); color:var(--white);}
   nav.tabs{display:flex; gap:8px; margin-top:24px; flex-wrap:wrap; align-items:center;}
   .tab-btn{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:var(--white); padding:9px 18px; border-radius:999px; font-size:14px; font-weight:600; transition:all .15s ease;}
   .tab-btn:hover{background:rgba(255,255,255,0.16);}
   .tab-btn.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .lock-btn{margin-left:auto; padding:9px 14px;}
-  .wave-divider{position:absolute; bottom:-1px; left:0; width:100%; height:36px; display:block;}
 
   main{max-width:960px; margin:0 auto; padding:28px 20px 100px;}
 
   .date-row{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; margin-bottom:18px; border-bottom:1px solid var(--line);}
   .date-pill{flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:64px; border-radius:14px; border:1.5px solid var(--line); background:var(--white); color:var(--ink); transition:all .15s ease;}
-  .date-pill .dow{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; opacity:0.65;}
+  .date-pill .dow{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; opacity:0.75;}
   .date-pill .dnum{font-family:var(--font-display); font-size:22px; line-height:1.1; margin-top:2px;}
   .date-pill.active{background:var(--coral); border-color:var(--coral); color:var(--white);}
   .date-pill:hover:not(.active){border-color:var(--bay-teal);}
@@ -86,7 +104,7 @@
   .court-head-row{border-bottom:1px solid var(--line); background:var(--sand); position:sticky; top:0; z-index:2;}
   .court-head-cell{padding:10px 8px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;}
   .court-head-cell .cname{font-family:var(--font-display); font-size:16px; letter-spacing:0.5px;}
-  .occ-badge{font-family:var(--font-mono); font-size:10px; padding:2px 8px; border-radius:999px; display:inline-block;}
+  .occ-badge{font-family:var(--font-mono); font-size:11px; padding:2px 8px; border-radius:999px; display:inline-block;}
   .occ-low{background:var(--bay-teal-light); color:var(--bay-deep);}
   .occ-mid{background:#FFF1CE; color:#9A6B00;}
   .occ-high{background:#FFE3DA; color:var(--coral-dark);}
@@ -95,13 +113,13 @@
   .time-cell{font-family:var(--font-mono); font-size:12px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); border-right:1px solid var(--line); background:var(--sand-light);}
   .slot-cell{padding:5px; display:flex; align-items:center; justify-content:center; border-right:1px solid var(--line);}
   .slot-cell:last-child{border-right:none;}
-  .slot-btn{width:100%; height:36px; border-radius:8px; border:1.5px dashed var(--bay-teal); background:var(--bay-teal-light); color:var(--bay-deep); font-size:11px; font-weight:700; transition:all .15s ease;}
+  .slot-btn{width:100%; height:44px; border-radius:8px; border:1.5px dashed var(--bay-teal); background:var(--bay-teal-light); color:var(--bay-deep); font-size:13px; font-weight:700; transition:all .15s ease;}
   .slot-btn:hover{background:var(--bay-teal); color:var(--white);}
-  .slot-taken{width:100%; height:36px; border-radius:8px; background:var(--occupied); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; padding:0 4px; text-align:center; gap:3px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+  .slot-taken{width:100%; height:44px; border-radius:8px; background:var(--occupied); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; padding:0 6px; text-align:center; gap:5px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
   .slot-taken.slot-class{background:var(--class-color);}
   .slot-taken.slot-block{background:var(--block-color);}
   .slot-taken-continue{opacity:.55;}
-  .slot-past{width:100%; height:36px; border-radius:8px; background:var(--past); color:var(--past-ink); display:flex; align-items:center; justify-content:center; font-size:13px;}
+  .slot-past{width:100%; height:44px; border-radius:8px; background:var(--past); color:var(--past-ink); display:flex; align-items:center; justify-content:center; font-size:13px;}
 
   .class-row{display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:10px; flex-wrap:wrap;}
   .class-row-time{font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); width:96px; flex-shrink:0;}
@@ -130,7 +148,7 @@
   .type-card:hover{border-color:var(--bay-teal); background:var(--bay-teal-light);}
   .type-icon{font-size:26px;}
   .type-label{font-family:var(--font-display); font-size:18px;}
-  .type-sub{font-size:11px; color:var(--ink-soft);}
+  .type-sub{font-size:12px; color:var(--ink-soft);}
   .type-tag{font-size:10px; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; text-transform:uppercase; font-weight:700;}
   .type-tag.cancha{background:#FFE8D8; color:var(--coral-dark);}
   .type-tag.clase{background:#EDE7F6; color:#5B3E96;}
@@ -142,7 +160,9 @@
   .dur-pill.active{background:var(--bay-teal); color:var(--white); border-color:var(--bay-teal);}
   .summary-line{font-family:var(--font-mono); font-size:13px; background:var(--sand); border-radius:10px; padding:10px 12px; margin:6px 0 4px; color:var(--ink);}
   .pay-note{font-size:13px; color:var(--ink-soft); margin:4px 0 14px;}
-  .legal-check{display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--ink-soft); margin-bottom:10px; line-height:1.4;}
+  .legal-check{display:flex; gap:8px; align-items:flex-start; font-size:13px; color:var(--ink-soft); margin-bottom:10px; line-height:1.4;}
+  .legal-check input{width:18px; height:18px; accent-color:var(--bay-teal);}
+  .legal-all{font-weight:600; color:var(--ink); border-top:1px solid var(--line); padding-top:10px; margin-top:4px;}
   .legal-check input{margin-top:2px; flex-shrink:0;}
   .modal-actions{display:flex; gap:10px; margin-top:20px;}
   .btn-confirm{flex:1; background:var(--coral); color:var(--white); border:none; padding:12px; border-radius:10px; font-weight:700;}
@@ -193,9 +213,18 @@
   .wa-dismiss{background:none;border:none;color:var(--ink-soft);font-size:16px; padding:4px;}
 
   .loading-note{text-align:center; color:var(--ink-soft); padding:40px; font-family:var(--font-mono); font-size:13px;}
+  .skeleton{border:1px solid var(--line); border-radius:16px; background:var(--white); overflow:hidden;}
+  .skeleton div{height:44px; margin:6px; border-radius:8px; background:linear-gradient(90deg, var(--past) 25%, #f0f3f3 50%, var(--past) 75%); background-size:200% 100%; animation:sk 1.2s linear infinite;}
+  @keyframes sk{to{background-position:-200% 0;}}
+  .hb-line{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); margin:0 0 14px;}
+  .hb-line i{width:9px; height:9px; border-radius:50%; background:#9FB4B8; flex:none;}
+  .hb-line.ok i{background:#2FA36B;} .hb-line.warn i{background:#E0A100;} .hb-line.crit i{background:var(--coral);}
 
   @media (max-width:480px){
     .wordmark{font-size:32px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important; animation:none !important;}
   }
 </style>
 </head>
@@ -211,12 +240,12 @@
       </svg>
       <div class="wordmark">BAHÍA PADEL</div>
     </div>
-    <div class="tagline">Reservas de cancha &amp; clases</div>
+    <div class="tagline-row">
+      <div class="tagline">Reservas de cancha &amp; clases</div>
+      <div id="hbChip" class="hb-chip" hidden></div>
+    </div>
     <nav class="tabs" id="tabsNav"></nav>
   </div>
-  <svg class="wave-divider" viewBox="0 0 1200 36" preserveAspectRatio="none">
-    <path d="M0,18 C150,36 350,0 600,18 C850,36 1050,0 1200,18 L1200,36 L0,36 Z" fill="#FAF5E8"/>
-  </svg>
 </header>
 
 <main id="app">
@@ -290,6 +319,11 @@
       try { localStorage.removeItem(TOKEN_KEY); } catch(e){}
       var err = new Error("Código no válido"); err.noAuth = true; throw err;
     }
+    if (r.status === 409){
+      // Otra persona escribió el mismo día antes que nosotros (control de versiones).
+      var j = {}; try { j = await r.json(); } catch(e){}
+      var conflicto = new Error(j.error || "Conflicto de versión"); conflicto.conflicto = true; throw conflicto;
+    }
     if (!r.ok){
       var txt = "";
       try { txt = (await r.json()).error || ""; } catch(e){}
@@ -323,12 +357,14 @@
       if (key === "session-state") return sesionLeer();
       return await api("get", { key: key });
     },
-    set: async function(key, value, shared){
+    set: async function(key, value, shared, ifVersion){
       if (key === "session-state"){
         try { localStorage.setItem(SESS_KEY, value); } catch(e){}
         return { key: key, value: value };
       }
-      return await api("set", { key: key, value: value });
+      var extra = { key: key, value: value };
+      if (typeof ifVersion === "number") extra.ifVersion = ifVersion;
+      return await api("set", extra);
     },
     delete: async function(key, shared){
       if (key === "session-state"){
@@ -379,7 +415,26 @@ const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
 // --------------------------------------------------------------------------------
 
 const DOW_LABELS = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
-const POLL_INTERVAL_MS = 20000; // refresco automático cada 20s
+const POLL_INTERVAL_MS = 60000; // refresco automático cada 60 s (una sola llamada dia.get)
+const REPLAY_URL = 'https://padelreplay.netlify.app/';
+
+/* Iconos SVG (un solo trazo, color heredado). Nada de emojis en la interfaz. */
+const ICONS = {
+  lock:     '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  user:     '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  ban:      '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  refresh:  '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  check:    '<path d="M20 6 9 17l-5-5"/>',
+  ball:     '<circle cx="12" cy="12" r="9"/><path d="M5.6 6.4c3.2 2.4 3.2 8.8 0 11.2M18.4 6.4c-3.2 2.4-3.2 8.8 0 11.2"/>',
+  video:    '<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+  note:     '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+};
+function ic(name){
+  return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||''}</svg>`;
+}
 
 const CANCHA_CSV_COLUMNS = [
   { label:'Tipo', get:r=>'Cancha' },
@@ -427,7 +482,12 @@ let state = {
   lastConfirmation: null,
   trainerFilter: 'todos',
   appUnlocked: false,
+  heartbeat: null,   // último latido del worker de video (worker:heartbeat)
 };
+/* Versión del documento cancha:<fecha> que leímos por última vez. Se manda al
+   escribir (ifVersion): si otra persona escribió antes, el servidor responde 409
+   y recargamos en vez de pisar su reserva. */
+const dayVersions = {};
 
 let bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
 function resetBookingFlow(){
@@ -501,6 +561,48 @@ function showToast(msg){
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2800);
+}
+/* Diálogo de confirmación propio (en vez de confirm() del navegador). */
+function confirmar(titulo, texto, opts){
+  opts = opts || {};
+  return new Promise(resolve=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'dlg-overlay';
+    wrap.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitulo">
+      <h4 id="dlgTitulo">${esc(titulo)}</h4><p>${esc(texto||'')}</p>
+      <div class="dlg-actions"><button type="button" id="dlgNo">${esc(opts.cancelar||'Volver')}</button><button type="button" class="danger" id="dlgSi">${esc(opts.ok||'Sí')}</button></div></div>`;
+    document.body.appendChild(wrap);
+    const cerrar = v => { wrap.remove(); resolve(v); };
+    wrap.querySelector('#dlgNo').addEventListener('click', ()=>cerrar(false));
+    wrap.querySelector('#dlgSi').addEventListener('click', ()=>cerrar(true));
+    wrap.addEventListener('click', e=>{ if(e.target===wrap) cerrar(false); });
+    wrap.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrar(false); });
+    wrap.querySelector('#dlgNo').focus();
+  });
+}
+/* Estado de la grabación según el latido del worker de la PC del club. */
+function estadoGrabacion(){
+  const hb = state.heartbeat;
+  if(!hb || !hb.ts) return { nivel:'off', texto:'Grabación: sin datos', detalle:'El worker de la PC del club nunca ha reportado señal.' };
+  const min = Math.round((Date.now() - hb.ts)/60000);
+  const cams = hb.camaras || [];
+  const caida = cams.find(c=>!c.grabando);
+  const disco = hb.discoLibreGB!=null ? `disco libre ${hb.discoLibreGB} GB` : 'disco ?';
+  if(min <= 3 && !caida) return { nivel:'ok', texto:'Grabación OK', detalle:`Última señal hace ${min} min · ${disco} · ${hb.enCola||0} video(s) en cola` };
+  if(min <= 3 && caida) return { nivel:'warn', texto:`Cámara ${caida.id} sin señal`, detalle:`El worker está vivo pero la cámara ${caida.id} no está grabando. Revisa cable, IP y clave RTSP.` };
+  if(min <= 15) return { nivel:'warn', texto:`Grabación: sin señal hace ${min} min`, detalle:'Puede ser un reinicio. Si sigue así en unos minutos, revisa la PC del club.' };
+  const hace = min >= 120 ? Math.round(min/60)+' h' : min+' min';
+  return { nivel:'crit', texto:`Grabación: sin señal hace ${hace}`, detalle:'La PC del club está apagada, sin internet o el worker no está corriendo. Los partidos de este rato no tendrán video.' };
+}
+function renderHeartbeat(){
+  const el = document.getElementById('hbChip');
+  if(!el) return;
+  if(!state.appUnlocked){ el.hidden = true; return; }
+  const g = estadoGrabacion();
+  el.hidden = false;
+  el.className = 'hb-chip ' + g.nivel;
+  el.title = g.detalle;
+  el.innerHTML = '<i></i>' + esc(g.texto);
 }
 function esc(str){
   return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -597,7 +699,7 @@ function nuevoCodigoVideo(){
   return `BP-${t}${s}`;
 }
 function lineaVideo(codigo){
-  return codigo ? `\nCódigo de video: ${codigo}` : '';
+  return codigo ? `\nTu partido queda grabado en video. Cuando termine, míralo aquí: ${REPLAY_URL}?codigo=${codigo}\nCódigo de video: ${codigo}` : '';
 }
 function buildCourtWhatsAppMessage(name, court, dateStr, start, end, codigoVideo){
   return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos en cancha!`;
@@ -653,8 +755,25 @@ async function gatherRangeEntries(startDateStr, endDateStr, filterFn){
 async function loadCourtBookings(dateStr){
   try{
     const res = await window.storage.get(`cancha:${dateStr}`, true);
+    dayVersions[dateStr] = res ? (res.version || 0) : 0;
     return res ? JSON.parse(res.value) : {};
   }catch(e){ return {}; }
+}
+/* Lee reservas + historial + latido del worker en UNA llamada (dia.get).
+   Si el servidor todavía no la tiene, cae a las lecturas de siempre. */
+async function cargarDia(dateStr){
+  try{
+    const r = await window.__api('dia.get', { fecha: dateStr });
+    dayVersions[dateStr] = r.cancha ? (r.cancha.version || 0) : 0;
+    let cancha = {}, historial = [];
+    try{ cancha = r.cancha ? JSON.parse(r.cancha.value) : {}; }catch(e){}
+    try{ historial = r.historial ? JSON.parse(r.historial.value) : []; }catch(e){}
+    try{ state.heartbeat = r.heartbeat ? JSON.parse(r.heartbeat.value) : null; }catch(e){ state.heartbeat = null; }
+    return { cancha, historial };
+  }catch(e){
+    if(e && e.noAuth) throw e;
+    return { cancha: await loadCourtBookings(dateStr), historial: await loadHistory(dateStr) };
+  }
 }
 async function loadHistory(dateStr){
   try{
@@ -664,7 +783,38 @@ async function loadHistory(dateStr){
 }
 async function saveCourtBookings(dateStr, data){
   if(!window.storage) throw new Error('Almacenamiento no disponible');
-  await window.storage.set(`cancha:${dateStr}`, JSON.stringify(data), true);
+  const v = (dateStr in dayVersions) ? dayVersions[dateStr] : 0;
+  const r = await window.storage.set(`cancha:${dateStr}`, JSON.stringify(data), true, v);
+  if(r && typeof r.version === 'number') dayVersions[dateStr] = r.version;
+}
+/* Si la escritura chocó con la de otra persona (409): avisar, recargar el día y cerrar el formulario. */
+async function manejarConflicto(e, dateStr){
+  if(!(e && e.conflicto)) return false;
+  showToast('Otra persona modificó este día hace un momento. Se actualizó; revisa e intenta de nuevo.');
+  try{ state.courtBookings = await loadCourtBookings(dateStr); }catch(_){}
+  closeModal();
+  return true;
+}
+/* Índice para la app de videos + pedido para el worker, en una sola llamada. */
+async function indexarVideo(codigo, info, pedido){
+  if(!codigo) return;
+  const items = [
+    { key:`video:${codigo}`, value: JSON.stringify(info) },
+    { key:`pedido:${codigo}`, value: JSON.stringify(pedido) },
+  ];
+  for(let i=0;i<2;i++){
+    try{ await window.__api('mset', { items }); return; }
+    catch(e){
+      if(i===1){
+        console.warn('No se pudo indexar el código de video', e);
+        showToast('La reserva quedó guardada, pero el código de video no se registró. Edita la reserva y guarda para reintentar.');
+      }
+    }
+  }
+}
+async function borrarPedido(codigo){
+  try{ if(codigo && window.storage) await window.storage.delete(`pedido:${codigo}`, true); }
+  catch(e){ console.warn('No se pudo borrar el pedido de video', e); }
 }
 /* ---------- STORAGE: índice para la app de videos ----------
    Cada reserva tiene un codigo_video. Guardamos una clave video:<codigo> que
@@ -717,8 +867,9 @@ async function upsertClient(nombre, apellido, phone, email){
 async function loadDateData(){
   state.loading = true; render();
   const dateStr = fmtDate(state.selectedDate);
-  state.courtBookings = await loadCourtBookings(dateStr);
-  state.history = await loadHistory(dateStr);
+  const d = await cargarDia(dateStr);
+  state.courtBookings = d.cancha;
+  state.history = d.historial;
   state.lastConfirmation = null;
   state.loading = false;
   render();
@@ -746,8 +897,11 @@ function startPolling(){
     if(!state.appUnlocked || state.modal || document.hidden) return; // no interrumpe formularios abiertos
     if(state.tab === 'panel') return; // el Panel tiene sus propios formularios (fechas de métricas, login) que no deben resetearse solos
     const dateStr = fmtDate(state.selectedDate);
-    state.courtBookings = await loadCourtBookings(dateStr);
-    state.history = await loadHistory(dateStr);
+    let d;
+    try{ d = await cargarDia(dateStr); }catch(e){ return; }
+    if(fmtDate(state.selectedDate) !== dateStr || state.modal) return; // cambió de día o abrió un formulario mientras cargaba
+    state.courtBookings = d.cancha;
+    state.history = d.historial;
     render();
   }, POLL_INTERVAL_MS);
 }
@@ -838,12 +992,18 @@ async function confirmSlotBooking(time, court, flow, name, phone, email, comment
   };
   slotsNeeded.forEach(t => { latest[`${t}|${court}`] = bookingInfo; });
 
-  await saveCourtBookings(dateStr, latest);
-  // Índice inverso para la app de videos: video:<codigo> -> datos de la reserva.
-  await saveVideoIndex(codigoVideo, {
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
+  // Índice inverso para la app de videos (video:<codigo>) y pedido para el
+  // worker del club (pedido:<codigo>, estado "programado"): el video se corta
+  // solo cuando termine el partido, sin esperar a que el cliente entre.
+  await indexarVideo(codigoVideo, {
     codigo_video: codigoVideo, fecha: dateStr, court, startTime: time, endTime,
     bookingType: flow.bookingType, groupId, name, phone,
     trainer: bookingInfo.trainer, players: bookingInfo.players,
+  }, {
+    estado: 'programado', fecha: dateStr, court, startTime: time, endTime,
+    groupId, bookingType: flow.bookingType, ts: Date.now(), origen: 'manager',
   });
 
   state.courtBookings = latest;
@@ -911,10 +1071,10 @@ async function enviarConfirmacion(accion, reserva){
 function estadoInvitacionTexto(){
   const c = state.lastConfirmation;
   if(!c || !c.estadoInvitacion) return '';
-  if(c.estadoInvitacion === 'enviando')   return ' · 📧 enviando invitación…';
-  if(c.estadoInvitacion === 'enviado')    return ' · 📅 invitación enviada a ' + esc(c.email || '');
-  if(c.estadoInvitacion === 'sin-correo') return ' · ⚠️ sin correo válido';
-  return ' · ⚠️ no se pudo enviar el correo';
+  if(c.estadoInvitacion === 'enviando')   return ' · enviando invitación…';
+  if(c.estadoInvitacion === 'enviado')    return ' · invitación enviada a ' + esc(c.email || '');
+  if(c.estadoInvitacion === 'sin-correo') return ' · sin correo: solo WhatsApp';
+  return ' · no se pudo enviar el correo';
 }
 
 /* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
@@ -1045,7 +1205,8 @@ async function editBooking(groupId, newName, newPhone, newEmail, newComment, new
     }
   });
 
-  await saveCourtBookings(dateStr, latest);
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
   // Mantener sincronizado el índice de la app de videos con los nuevos datos.
   if(ref && ref.codigo_video){
     await saveVideoIndex(ref.codigo_video, {
@@ -1077,7 +1238,8 @@ async function editBlockTitle(groupId, newTitle){
     }
   });
 
-  await saveCourtBookings(dateStr, latest);
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
 
   state.courtBookings = latest;
   try{
@@ -1104,7 +1266,7 @@ async function cancelGroup(groupId){
   });
   try{
     await saveCourtBookings(dateStr, latest);
-    for(const cv of codigosVideo){ await deleteVideoIndex(cv); }
+    for(const cv of codigosVideo){ await deleteVideoIndex(cv); await borrarPedido(cv); }
     state.courtBookings = latest;
     try{
       state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
@@ -1112,6 +1274,7 @@ async function cancelGroup(groupId){
     if(refCancel) enviarConfirmacion('cancelar', refCancel);
     showToast('Reserva cancelada.');
   }catch(e){
+    if(await manejarConflicto(e, dateStr)) return;
     showToast('No se pudo cancelar. Intenta de nuevo.');
   }
   render();
@@ -1246,7 +1409,7 @@ function renderNav(){
   const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'] ];
   nav.innerHTML = tabs.map(([id,label]) =>
     `<button class="tab-btn ${state.tab===id?'active':''}" data-tab="${id}">${label}</button>`
-  ).join('') + `<button class="tab-btn lock-btn" id="lockAppBtn" title="Bloquear la app en este equipo">🔒</button>`;
+  ).join('') + `<button class="tab-btn lock-btn" id="lockAppBtn" title="Bloquear la app en este equipo" aria-label="Bloquear la app en este equipo">${ic('lock')}</button>`;
   nav.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
     btn.addEventListener('click', ()=> selectTab(btn.dataset.tab));
   });
@@ -1309,9 +1472,9 @@ function renderCanchaTab(){
         if(booking){
           const type = booking.bookingType || 'cancha';
           let icon, extraClass, label;
-          if(type==='cancha'){ icon='🔒'; extraClass=''; label = booking.name; }
-          else if(type==='clase'){ icon='🧑‍🏫'; extraClass=' slot-class'; label = booking.name; }
-          else { icon='🚫'; extraClass=' slot-block'; label = booking.title || 'Bloqueo'; }
+          if(type==='cancha'){ icon=ic('ball'); extraClass=''; label = booking.name; }
+          else if(type==='clase'){ icon=ic('user'); extraClass=' slot-class'; label = booking.name; }
+          else { icon=ic('ban'); extraClass=' slot-block'; label = booking.title || 'Bloqueo'; }
           const titleAttr = (type==='bloqueo' ? booking.title : booking.name) + (booking.comment ? ' — ' + booking.comment : '');
           if(booking.startTime===time){
             return `<div class="slot-cell"><div class="slot-taken${extraClass}" title="${esc(titleAttr)}">${icon} ${esc(label)}</div></div>`;
@@ -1319,9 +1482,9 @@ function renderCanchaTab(){
           return `<div class="slot-cell"><div class="slot-taken slot-taken-continue${extraClass}"></div></div>`;
         }
         if(isPastSlot(time)){
-          return `<div class="slot-cell"><div class="slot-past">🕐</div></div>`;
+          return `<div class="slot-cell"><div class="slot-past" title="Ya pasó">${ic('clock')}</div></div>`;
         }
-        return `<div class="slot-cell"><button class="slot-btn" data-time="${time}" data-court="${esc(court)}">Libre -${priceShortLabel(courtSlotPrice(time)*2)}</button></div>`;
+        return `<div class="slot-cell"><button class="slot-btn" data-time="${time}" data-court="${esc(court)}">Libre · $${priceShortLabel(courtSlotPrice(time)*2)}/h</button></div>`;
       }).join('')}
     </div>
   `).join('');
@@ -1332,7 +1495,7 @@ function renderCanchaTab(){
         <h2 class="section-title">Reservar</h2>
         <p class="section-sub">Elige un horario libre y reserva cancha o clase con entrenador · pago en sitio.</p>
       </div>
-      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
     </div>
     <div class="legend">
       <span><span class="dot free"></span>Libre</span>
@@ -1388,7 +1551,7 @@ function renderClasesTab(){
         <div class="class-row-time">${c.startTime}–${c.endTime}</div>
         <div class="class-row-info">
           <div class="who">${esc(c.trainer)} <span class="type-tag clase">Clase</span></div>
-          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · 📝 '+esc(c.comment) : ''}</div>
+          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · Nota: '+esc(c.comment) : ''}</div>
         </div>
         <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
       </div>
@@ -1400,7 +1563,7 @@ function renderClasesTab(){
         <h2 class="section-title">Clases del día</h2>
         <p class="section-sub">Vista de consulta para entrenadores. La programación se hace desde la pestaña Cancha.</p>
       </div>
-      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
     </div>
     ${renderDatePills()}
     <div class="duration-options" style="margin-bottom:18px;">
@@ -1478,7 +1641,7 @@ function renderPanelTab(){
           label = `${e.court} · ${e.startTime}–${e.endTime}`;
           metaLine = `${esc(label)} · Bloqueado por ${esc(e.name)}`;
         }
-        if(e.comment){ metaLine += ` · 📝 ${esc(e.comment)}`; }
+        if(e.comment){ metaLine += ` · Nota: ${esc(e.comment)}`; }
         const courtesyTag = (e.courtesy && e.courtesy!=='none')
           ? `<span class="type-tag courtesy">${e.courtesy==='full'?'Cortesía completa':'Cortesía 1/4'}</span>` : '';
         const seriesButton = (type==='bloqueo' && e.seriesMeta && e.seriesMeta.intervalDays)
@@ -1502,10 +1665,11 @@ function renderPanelTab(){
     <div class="section-head">
       <div>
         <h2 class="section-title">Panel de reservas</h2>
-        <p class="section-sub">Sesión: ${esc(state.staffName)} · ingresos estimados del día: ${formatCOP(totalRevenue)}</p>
+        <p class="section-sub">Sesión: ${esc(state.staffName)} · por cobrar este día (estimado): ${formatCOP(totalRevenue)}</p>
       </div>
-      <button class="refresh-btn" id="refreshBtn">🔄 Actualizar</button>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
     </div>
+    ${(g=>`<p class="hb-line ${g.nivel}"><i></i><b>${esc(g.texto)}</b>&nbsp;· ${esc(g.detalle)}</p>`)(estadoGrabacion())}
     ${renderDatePills()}
     <button class="block-open-btn" id="openBlockBtn">+ Crear bloqueo recurrente</button>
 
@@ -1549,16 +1713,18 @@ function bindPanelTab(){
     });
   });
   document.querySelectorAll('[data-admin-cancel-idx]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', async ()=>{
       const e = window.__adminAll[Number(btn.dataset.adminCancelIdx)];
-      if(!confirm('¿Cancelar esta reserva?')) return;
+      const ok = await confirmar('¿Cancelar esta reserva?', `${labelForBooking(e)} · ${e.startTime}–${e.endTime}${e.name ? ' · ' + e.name : ''}. Se avisará al cliente por correo si tiene uno.`, { ok:'Sí, cancelar', cancelar:'Volver' });
+      if(!ok) return;
       cancelGroup(e.groupId);
     });
   });
   document.querySelectorAll('[data-admin-series-idx]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const e = window.__adminAll[Number(btn.dataset.adminSeriesIdx)];
-      if(!confirm('¿Cancelar TODAS las fechas de este bloqueo recurrente?')) return;
+      const ok = await confirmar('¿Cancelar toda la serie?', `Se quitará "${e.title}" de todas sus fechas (${e.seriesMeta.occurrences}).`, { ok:'Sí, cancelar la serie', cancelar:'Volver' });
+      if(!ok) return;
       const removed = await cancelSeries(e.seriesId, e.seriesMeta);
       showToast(`Serie cancelada en ${removed} fecha(s).`);
       await loadDateData();
@@ -1608,12 +1774,12 @@ function renderTypeStep(m){
     <p class="modal-sub">¿Qué deseas reservar en este horario?</p>
     <div class="type-options">
       <button class="type-card" data-booking-type="cancha">
-        <span class="type-icon">🎾</span>
+        <span class="type-icon">${ic('ball')}</span>
         <span class="type-label">Cancha</span>
         <span class="type-sub">Juego libre</span>
       </button>
       <button class="type-card" data-booking-type="clase">
-        <span class="type-icon">🧑‍🏫</span>
+        <span class="type-icon">${ic('user')}</span>
         <span class="type-label">Clase</span>
         <span class="type-sub">Con entrenador</span>
       </button>
@@ -1697,12 +1863,14 @@ function renderFormStep(m){
       <input type="tel" id="phoneInput" placeholder="Ej. 300 123 4567" autocomplete="off">
       <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
     </div>
-    <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" placeholder="Ej. laura@correo.com"></div>
+    <div class="field"><label for="emailInput">Correo electrónico (opcional · recibe la invitación al calendario y el video)</label><input type="email" id="emailInput" placeholder="Ej. laura@correo.com"></div>
     <div class="field"><label for="commentInput">Comentario (opcional)</label><input type="text" id="commentInput" placeholder="Ej. cumpleaños, trae su raqueta..."></div>
     ${courtesyBlock}
-    <p class="pay-note">💳 Pago en el club</p>
+    <p class="pay-note">Pago en el club</p>
     <label class="legal-check"><input type="checkbox" id="legalDatos"><span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 (Habeas Data - Colombia), para efectos de esta reserva y contacto por parte del club.</span></label>
     <label class="legal-check"><input type="checkbox" id="legalExoneracion"><span>Declaro que participo en la actividad deportiva bajo mi propia responsabilidad y exonero a Bahía Padel de responsabilidad por lesiones derivadas de la práctica.</span></label>
+    <label class="legal-check"><input type="checkbox" id="legalVideo"><span>Autorizo la grabación en video del partido y su acceso mediante el código de video que recibiré. El club conserva los videos 30 días y puedo pedir su borrado por WhatsApp.</span></label>
+    <label class="legal-check legal-all"><input type="checkbox" id="legalTodos"><span>El cliente acepta los tres puntos anteriores</span></label>
     <div class="error-text" id="modalError" style="display:none;"></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="backBtn">Atrás</button>
@@ -1912,12 +2080,16 @@ function bindModalContent(){
     });
   }
 
-  const legalDatos = document.getElementById('legalDatos');
-  const legalExoneracion = document.getElementById('legalExoneracion');
-  if(legalDatos && legalExoneracion){
-    const sync = ()=>{ document.getElementById('modalConfirm').disabled = !(legalDatos.checked && legalExoneracion.checked); };
-    legalDatos.addEventListener('change', sync);
-    legalExoneracion.addEventListener('change', sync);
+  const legales = ['legalDatos','legalExoneracion','legalVideo'].map(id=>document.getElementById(id)).filter(Boolean);
+  const legalTodos = document.getElementById('legalTodos');
+  if(legales.length){
+    const sync = ()=>{
+      const ok = legales.every(c=>c.checked);
+      document.getElementById('modalConfirm').disabled = !ok;
+      if(legalTodos) legalTodos.checked = ok;
+    };
+    legales.forEach(c=>c.addEventListener('change', sync));
+    if(legalTodos) legalTodos.addEventListener('change', ()=>{ legales.forEach(c=>{ c.checked = legalTodos.checked; }); sync(); });
   }
 
   const confirmBtn = document.getElementById('modalConfirm');
@@ -1935,11 +2107,11 @@ function bindModalContent(){
         const email = document.getElementById('emailInput').value.trim();
         const commentEl = document.getElementById('commentInput');
         const comment = commentEl ? commentEl.value.trim() : '';
-        if(!nombre || !apellido || !phone || !email){
-          if(errEl){ errEl.textContent = 'Completa nombre, apellido, teléfono y correo.'; errEl.style.display = 'block'; }
+        if(!nombre || !apellido || !phone){
+          if(errEl){ errEl.textContent = 'Completa nombre, apellido y teléfono.'; errEl.style.display = 'block'; }
           return;
         }
-        if(!/^\S+@\S+\.\S+$/.test(email)){
+        if(email && !/^\S+@\S+\.\S+$/.test(email)){
           if(errEl){ errEl.textContent = 'Ingresa un correo válido.'; errEl.style.display = 'block'; }
           return;
         }
@@ -2032,20 +2204,26 @@ function bindModal(){
 function renderConfirmBanner(){
   if(!state.lastConfirmation) return '';
   return `<div class="wa-banner">
-    <span>✅ Reserva guardada${estadoInvitacionTexto()}</span>
+    <span>${ic('check')} Reserva guardada${estadoInvitacionTexto()}</span>
     <a class="wa-btn" href="${buildWhatsAppLink(state.lastConfirmation.phone, state.lastConfirmation.message)}" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>
-    ${state.lastConfirmation.gcal ? `<a class="wa-btn" href="${state.lastConfirmation.gcal}" target="_blank" rel="noopener">📅 Añadir a calendario</a>` : ''}
+    ${state.lastConfirmation.gcal ? `<a class="wa-btn" href="${state.lastConfirmation.gcal}" target="_blank" rel="noopener">${ic('calendar')} Añadir a calendario</a>` : ''}
     <button class="wa-dismiss" id="waDismiss">✕</button>
   </div>`;
 }
 
 /* ---------- RENDER PRINCIPAL ---------- */
 function render(){
-  if(!state.appUnlocked){ renderLockScreen(); return; }
+  if(!state.appUnlocked){ renderLockScreen(); renderHeartbeat(); return; }
   renderNav();
+  renderHeartbeat();
   const app = document.getElementById('app');
+  // Conservar el scroll de la grilla y de la página: el refresco automático no debe mover nada.
+  const grillaVieja = app.querySelector('.court-scroll');
+  const scrollTop = grillaVieja ? grillaVieja.scrollTop : null;
+  const scrollLeft = grillaVieja ? grillaVieja.scrollLeft : null;
+  const pageY = window.scrollY;
   if(state.loading){
-    app.innerHTML = `<div class="loading-note">Cargando reservas…</div>`;
+    app.innerHTML = `<div class="loading-note">Cargando reservas…</div><div class="skeleton" aria-hidden="true">${'<div></div>'.repeat(6)}</div>`;
   } else {
     let html;
     if(state.tab==='cancha') html = renderCanchaTab();
@@ -2053,6 +2231,9 @@ function render(){
     else html = renderPanelTab();
 
     app.innerHTML = html + renderModal();
+    const grillaNueva = app.querySelector('.court-scroll');
+    if(grillaNueva && scrollTop !== null){ grillaNueva.scrollTop = scrollTop; grillaNueva.scrollLeft = scrollLeft; }
+    window.scrollTo(0, pageY);
 
     bindDatePills();
     if(state.tab==='cancha') bindCanchaTab();

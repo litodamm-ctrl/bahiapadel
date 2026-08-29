@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0E3B43">
 <title>Bahía Padel — Premios y Reactivación</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E3B43'/%3E%3Crect x='8' y='8' width='16' height='16' rx='2' fill='none' stroke='%23FF6A4D' stroke-width='2'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='%23FF6A4D' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -12,6 +14,7 @@
 --danger:#C0432B;--danger-bg:#FBE7E2;--ink:#14282B;--ink-soft:#4B6167;--line:rgba(20,40,43,.14);
 --fd:'Bebas Neue',sans-serif;--fb:'Work Sans',sans-serif;--fm:'Space Mono',monospace;}
 *{box-sizing:border-box;}body{margin:0;font-family:var(--fb);background:var(--sand-light);color:var(--ink);}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--coral);outline-offset:2px;}
 header{background:linear-gradient(160deg,var(--bay-deep),var(--bay-deep-2));padding:20px;}
 .hi{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;}
 .wm{font-family:var(--fd);font-size:34px;letter-spacing:1.5px;color:#fff;line-height:1;}
@@ -19,7 +22,7 @@ header{background:linear-gradient(160deg,var(--bay-deep),var(--bay-deep-2));padd
 .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#DCEFEC;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;}
 main{max-width:900px;margin:0 auto;padding:20px;}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.tab{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-soft);cursor:pointer;}
+.tab{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
 .tab.active{background:var(--bay-deep);color:#fff;border-color:var(--bay-deep);}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
 h2{font-family:var(--fd);letter-spacing:1px;font-size:24px;color:var(--bay-deep);margin:0 0 4px;}
@@ -28,12 +31,14 @@ input,select,textarea{font-family:var(--fb);font-size:15px;padding:11px 12px;bor
 input.mono{font-family:var(--fm);letter-spacing:1px;text-transform:uppercase;}
 textarea{min-height:96px;resize:vertical;}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.btn{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-weight:700;font-size:15px;padding:11px 18px;white-space:nowrap;}
+.btn{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-weight:700;font-size:15px;padding:11px 18px;white-space:nowrap;min-height:44px;}
 .btn-primary{background:var(--bay-teal);color:#fff;}.btn-primary:hover{background:#178578;}
 .btn-coral{background:var(--coral);color:#fff;}.btn-coral:hover{background:var(--coral-dark);}
+.btn-soft{background:#eee;color:var(--ink);}
 .btn-wa{background:#25D366;color:#08331d;font-weight:700;}
 .badge{display:inline-flex;gap:6px;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;}
 .b-ok{background:var(--ok-bg);color:var(--ok);}.b-canj{background:var(--canj-bg);color:var(--canj);}.b-venc{background:var(--danger-bg);color:var(--danger);}
+.tablewrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:14px;}
 th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);}
 th{color:var(--ink-soft);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;}
@@ -45,6 +50,7 @@ th{color:var(--ink-soft);font-weight:600;font-size:12px;text-transform:uppercase
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--bay-deep);color:#fff;padding:12px 18px;border-radius:11px;font-weight:600;opacity:0;transition:.25s;z-index:9;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .small{font-size:12px;color:var(--ink-soft);}
+@media (prefers-reduced-motion:reduce){.toast{transition:none;}}
 </style>
 </head>
 <body>
@@ -53,11 +59,13 @@ th{color:var(--ink-soft);font-weight:600;font-size:12px;text-transform:uppercase
   <div class="chip" id="userChip">Recepción</div>
 </div></header>
 <main id="main"></main>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* Sin manejadores inline (onclick="..."): todo se conecta con addEventListener
+   para que un nombre de cliente con comillas nunca pueda ejecutar código. */
 const ENDPOINT = "/.netlify/functions/loyalty";
-let CODE = null;           // código de staff (en memoria)
+let CODE = null;           // código de staff (solo en memoria)
 let staffName = "Recepción";
 let tab = "recepcion";
 
@@ -71,25 +79,28 @@ async function api(action, extra){
 }
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function $(id){ return document.getElementById(id); }
+function on(id, ev, fn){ const el=$(id); if(el) el.addEventListener(ev, fn); }
 function mesActual(){const d=new Date(Date.now()-5*3600*1000);return d.toISOString().slice(0,7);}
 function trimestreActual(){const d=new Date(Date.now()-5*3600*1000);const q=Math.floor(d.getUTCMonth()/3)+1;return d.getUTCFullYear()+"-Q"+q;}
 
 /* ── Login ── */
 function renderLogin(){
-  document.getElementById("main").innerHTML = `
+  $("main").innerHTML = `
   <div class="card" style="max-width:420px;margin:40px auto;">
     <h2>Acceso de staff</h2>
     <p class="sub">Ingresa tu nombre y el código de acceso del club.</p>
-    <div style="margin-bottom:10px"><input id="nm" placeholder="Tu nombre (ej. Sary)"></div>
+    <div style="margin-bottom:10px"><input id="nm" placeholder="Tu nombre (ej. Sary)" autocomplete="off"></div>
     <div style="margin-bottom:14px"><input id="cd" type="password" placeholder="Código de acceso"></div>
-    <button class="btn btn-primary" style="width:100%" onclick="entrar()">Entrar</button>
+    <button class="btn btn-primary" style="width:100%" id="btnEntrar">Entrar</button>
   </div>`;
-  document.getElementById("cd").addEventListener("keydown",e=>{if(e.key==="Enter")entrar();});
+  on("btnEntrar","click",entrar);
+  on("cd","keydown",e=>{if(e.key==="Enter")entrar();});
 }
 async function entrar(){
-  CODE = (document.getElementById("cd").value||"").trim();
-  staffName = (document.getElementById("nm").value||"").trim() || "Recepción";
-  try{ await api("auth"); document.getElementById("userChip").textContent = "Recepción · "+staffName; render(); }
+  CODE = ($("cd").value||"").trim();
+  staffName = ($("nm").value||"").trim() || "Recepción";
+  try{ await api("auth"); $("userChip").textContent = "Recepción · "+staffName; render(); }
   catch(e){ CODE=null; toast(e.message); }
 }
 
@@ -97,30 +108,31 @@ async function entrar(){
 function render(){
   if(!CODE){ renderLogin(); return; }
   const tabsHtml = [["recepcion","Recepción / Canje"],["reporte","Reporte de premios"],["campanas","Campañas"],["repcamp","Reporte de campaña"]]
-    .map(([id,l])=>`<div class="tab ${tab===id?'active':''}" onclick="setTab('${id}')">${l}</div>`).join("");
-  document.getElementById("main").innerHTML = `<div class="tabs">${tabsHtml}</div><div id="view"></div>`;
+    .map(([id,l])=>`<button type="button" class="tab ${tab===id?'active':''}" data-tab="${id}">${l}</button>`).join("");
+  $("main").innerHTML = `<div class="tabs">${tabsHtml}</div><div id="view"></div>`;
+  document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{ tab=b.dataset.tab; render(); }));
   ({recepcion:viewRecepcion,reporte:viewReporte,campanas:viewCampanas,repcamp:viewRepCamp}[tab])();
 }
-function setTab(t){ tab=t; render(); }
 
 /* ── 1) Recepción / Canje ── */
 function viewRecepcion(){
-  document.getElementById("view").innerHTML = `
+  $("view").innerHTML = `
   <div class="card">
     <h2>Buscar premio</h2>
     <p class="sub">Escribe el código que el cliente recibió por WhatsApp y márcalo como canjeado.</p>
-    <div class="row"><input id="cod" class="mono" placeholder="AAAAMM-####" style="flex:1">
-      <button class="btn btn-primary" onclick="buscar()">Buscar</button></div>
+    <div class="row"><input id="cod" class="mono" placeholder="AAAAMM-####" style="flex:1" autocomplete="off">
+      <button class="btn btn-primary" id="btnBuscar">Buscar</button></div>
     <div id="res"></div>
   </div>`;
-  document.getElementById("cod").addEventListener("keydown",e=>{if(e.key==="Enter")buscar();});
+  on("btnBuscar","click",buscar);
+  on("cod","keydown",e=>{if(e.key==="Enter")buscar();});
 }
 async function buscar(){
-  const cod=(document.getElementById("cod").value||"").trim().toUpperCase();
+  const cod=($("cod").value||"").trim().toUpperCase();
   if(!cod){toast("Escribe el código");return;}
   try{
     const {premio:p} = await api("premios.buscar",{codigo_unico:cod});
-    const box=document.getElementById("res");
+    const box=$("res");
     if(!p){ box.innerHTML=`<p class="sub" style="margin-top:16px">No se encontró ningún premio con ese código.</p>`; return; }
     const vencido = p.estado==="vencido" || (p.estado==="emitido" && p.mes < mesActual());
     const badge = p.estado==="canjeado" ? `<span class="badge b-canj">✔ CANJEADO</span>`
@@ -129,11 +141,12 @@ async function buscar(){
     <div class="card" style="margin-top:16px">
       <div class="row" style="justify-content:space-between"><b style="font-size:16px">${esc(p.cliente_id)}</b>${badge}</div>
       <p style="font-family:var(--fd);font-size:22px;color:var(--bay-deep);margin:10px 0 2px">${esc(p.premio)}</p>
-      <p class="small">Hito ${p.hito} · Mes ${esc(p.mes)} · Código <b>${esc(p.codigo_unico)}</b></p>
-      ${p.estado==="canjeado" ? `<p class="small">Canjeado el ${new Date(p.fecha_canje).toLocaleString("es-CO")} por ${esc(p.usuario_canje||"")}</p>`
+      <p class="small">Hito ${esc(p.hito)} · Mes ${esc(p.mes)} · Código <b>${esc(p.codigo_unico)}</b></p>
+      ${p.estado==="canjeado" ? `<p class="small">Canjeado el ${esc(new Date(p.fecha_canje).toLocaleString("es-CO"))} por ${esc(p.usuario_canje||"")}</p>`
         : vencido ? `<p class="small">Este premio ya no se puede entregar.</p>`
-        : `<button class="btn btn-coral" style="width:100%;margin-top:10px" onclick="canjear('${esc(p.codigo_unico)}')">Marcar como canjeado</button>`}
+        : `<button class="btn btn-coral" style="width:100%;margin-top:10px" id="btnCanjear">Marcar como canjeado</button>`}
     </div>`;
+    const b=$("btnCanjear"); if(b) b.addEventListener("click",()=>canjear(p.codigo_unico));
   }catch(e){toast(e.message);}
 }
 async function canjear(cod){
@@ -144,111 +157,122 @@ async function canjear(cod){
 
 /* ── 2) Reporte de premios ── */
 function viewReporte(){
-  document.getElementById("view").innerHTML = `
+  $("view").innerHTML = `
   <div class="card">
     <h2>Reporte mensual de premios</h2>
     <div class="row"><input id="mes" value="${mesActual()}" placeholder="AAAA-MM" style="max-width:160px">
-      <button class="btn btn-primary" onclick="cargarReporte()">Ver</button>
-      <button class="btn" style="background:#eee" onclick="recompute()">Recalcular emisiones</button></div>
+      <button class="btn btn-primary" id="btnVerRep">Ver</button>
+      <button class="btn btn-soft" id="btnRecompute">Recalcular emisiones</button></div>
     <div id="rep"></div>
   </div>`;
+  on("btnVerRep","click",cargarReporte);
+  on("btnRecompute","click",recompute);
   cargarReporte();
 }
 async function cargarReporte(){
-  const mes=(document.getElementById("mes").value||mesActual()).trim();
+  const mes=($("mes").value||mesActual()).trim();
   try{
     const r=await api("premios.reporte",{mes});
     let filas=Object.keys(r.por_hito).sort((a,b)=>a-b).map(k=>{
       const h=r.por_hito[k];
-      return `<tr><td>${k}</td><td>${esc(h.premio)}</td><td>${h.emitidos}</td><td>${h.canjeados}</td><td>${h.vencidos}</td></tr>`;
+      return `<tr><td>${esc(k)}</td><td>${esc(h.premio)}</td><td>${h.emitidos}</td><td>${h.canjeados}</td><td>${h.vencidos}</td></tr>`;
     }).join("") || `<tr><td colspan="5" class="small">Sin premios en este mes.</td></tr>`;
-    document.getElementById("rep").innerHTML = `
+    $("rep").innerHTML = `
       <div class="kpi">
         <div><b>${r.emitidos}</b><span>Emitidos vigentes</span></div>
         <div><b>${r.canjeados}</b><span>Canjeados</span></div>
         <div><b>${r.vencidos}</b><span>Vencidos</span></div>
         <div><b>$${(r.costo_estimado||0).toLocaleString("es-CO")}</b><span>Costo estimado</span></div>
       </div>
-      <table><thead><tr><th>Hito</th><th>Premio</th><th>Emitidos</th><th>Canjeados</th><th>Vencidos</th></tr></thead><tbody>${filas}</tbody></table>
+      <div class="tablewrap"><table><thead><tr><th>Hito</th><th>Premio</th><th>Emitidos</th><th>Canjeados</th><th>Vencidos</th></tr></thead><tbody>${filas}</tbody></table></div>
       <p class="small" style="margin-top:8px">Los costos por hito se editan en Supabase (clave <code>premio-costos</code>).</p>`;
   }catch(e){toast(e.message);}
 }
 async function recompute(){
-  try{ const r=await api("premios.recompute",{mes:(document.getElementById("mes").value||mesActual()).trim()});
+  try{ const r=await api("premios.recompute",{mes:($("mes").value||mesActual()).trim()});
     toast("Emitidos nuevos: "+r.emitidos_nuevos); cargarReporte(); }catch(e){toast(e.message);}
 }
 
 /* ── 3) Campañas ── */
 function viewCampanas(){
-  document.getElementById("view").innerHTML = `
+  $("view").innerHTML = `
   <div class="card">
     <h2>Campañas de reactivación</h2>
     <p class="sub">Genera la lista de la campaña, edita el mensaje y envía uno por uno por WhatsApp.</p>
-    <div class="row" style="margin-bottom:10px"><label class="small">Campaña</label>
+    <div class="row" style="margin-bottom:10px"><label class="small" for="camp">Campaña</label>
       <input id="camp" value="${trimestreActual()}" style="max-width:160px">
-      <button class="btn" style="background:#eee" onclick="cargarPlantilla()">Cargar</button></div>
-    <label class="small">Mensaje (usa <b>{nombre}</b>)</label>
+      <button class="btn btn-soft" id="btnCargarTpl">Cargar</button></div>
+    <label class="small" for="tpl">Mensaje (usa <b>{nombre}</b>)</label>
     <textarea id="tpl" placeholder="Cargando plantilla…"></textarea>
     <div class="row" style="margin-top:10px">
-      <button class="btn btn-primary" onclick="guardarPlantilla()">Guardar mensaje</button>
-      <button class="btn btn-coral" onclick="generar()">Generar lista</button></div>
+      <button class="btn btn-primary" id="btnGuardarTpl">Guardar mensaje</button>
+      <button class="btn btn-coral" id="btnGenerar">Generar lista</button></div>
     <div id="lista"></div>
   </div>`;
+  on("btnCargarTpl","click",cargarPlantilla);
+  on("btnGuardarTpl","click",guardarPlantilla);
+  on("btnGenerar","click",generar);
   cargarPlantilla(); cargarLista();
 }
 async function cargarPlantilla(){
-  try{ const {texto}=await api("campanas.plantilla_get",{campana:campVal()}); document.getElementById("tpl").value=texto||""; }
+  try{ const {texto}=await api("campanas.plantilla_get",{campana:campVal()}); $("tpl").value=texto||""; }
   catch(e){toast(e.message);}
 }
-function campVal(){return (document.getElementById("camp").value||trimestreActual()).trim();}
+function campVal(){return ($("camp").value||trimestreActual()).trim();}
 async function guardarPlantilla(){
-  try{ await api("campanas.plantilla_set",{campana:campVal(),texto:document.getElementById("tpl").value}); toast("Mensaje guardado"); }
+  try{ await api("campanas.plantilla_set",{campana:campVal(),texto:$("tpl").value}); toast("Mensaje guardado"); }
   catch(e){toast(e.message);}
 }
 async function generar(){
   try{ toast("Generando…"); const r=await api("campanas.generar",{campana:campVal()});
     toast("Candidatos: "+r.candidatos); cargarLista(); }catch(e){toast(e.message);}
 }
+let filasCampana = [];
 async function cargarLista(){
   try{
     const {filas}=await api("campanas.lista",{campana:campVal()});
-    const tpl=document.getElementById("tpl").value;
-    const rows=(filas||[]).map(f=>{
+    filasCampana = filas || [];
+    const rows=filasCampana.map((f,i)=>{
       const enviado = f.enviado ? `<span class="badge b-ok">enviado</span>` : `<span class="small">—</span>`;
-      return `<tr><td>${esc(f.nombre||f.cliente_id)}</td><td>${f.dias_sin_jugar}</td><td>${f.total_reservas}</td>
+      return `<tr><td>${esc(f.nombre||f.cliente_id)}</td><td>${esc(f.dias_sin_jugar)}</td><td>${esc(f.total_reservas)}</td>
         <td>$${Number(f.facturacion_historica||0).toLocaleString("es-CO")}</td>
         <td>${enviado}</td>
-        <td><button class="btn btn-wa" onclick="enviarWA('${esc(f.cliente_id)}','${esc(f.telefono||f.cliente_id)}','${esc(f.nombre||'')}')">Enviar WhatsApp</button></td></tr>`;
+        <td><button class="btn btn-wa" data-fila="${i}">Enviar WhatsApp</button></td></tr>`;
     }).join("") || `<tr><td colspan="6" class="small">Aún no hay lista. Pulsa "Generar lista".</td></tr>`;
-    document.getElementById("lista").innerHTML =
-      `<table style="margin-top:16px"><thead><tr><th>Nombre</th><th>Días s/jugar</th><th>Total res.</th><th>Facturación</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
-  }catch(e){ document.getElementById("lista").innerHTML=`<p class="small" style="margin-top:12px">${esc(e.message)}</p>`; }
+    $("lista").innerHTML =
+      `<div class="tablewrap"><table style="margin-top:16px"><thead><tr><th>Nombre</th><th>Días s/jugar</th><th>Total res.</th><th>Facturación</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    document.querySelectorAll("[data-fila]").forEach(b=>b.addEventListener("click",()=>{
+      const f = filasCampana[Number(b.dataset.fila)];
+      if(f) enviarWA(f.cliente_id, f.telefono||f.cliente_id, f.nombre||"");
+    }));
+  }catch(e){ $("lista").innerHTML=`<p class="small" style="margin-top:12px">${esc(e.message)}</p>`; }
 }
 async function enviarWA(clienteId, telefono, nombre){
-  const tpl=document.getElementById("tpl").value || "";
+  const tpl=$("tpl").value || "";
   const msg=tpl.replace(/\{nombre\}/g, nombre||"");
   const url="https://wa.me/"+String(telefono).replace(/\D/g,"")+"?text="+encodeURIComponent(msg);
-  window.open(url,"_blank");
+  window.open(url,"_blank","noopener");
   try{ await api("campanas.marcar_enviado",{cliente_id:clienteId,campana:campVal()}); cargarLista(); }catch(e){/* best-effort */}
 }
 
 /* ── 4) Reporte de campaña ── */
 function viewRepCamp(){
-  document.getElementById("view").innerHTML = `
+  $("view").innerHTML = `
   <div class="card">
     <h2>Reporte de campaña</h2>
     <p class="sub">Enviados, cuántos volvieron a jugar en los 14 días siguientes y su facturación.</p>
     <div class="row"><input id="rc" value="${trimestreActual()}" style="max-width:160px">
-      <button class="btn btn-primary" onclick="cargarRepCamp()">Ver</button></div>
+      <button class="btn btn-primary" id="btnRepCamp">Ver</button></div>
     <div id="rcbox"></div>
   </div>`;
+  on("btnRepCamp","click",cargarRepCamp);
 }
 async function cargarRepCamp(){
-  const campana=(document.getElementById("rc").value||trimestreActual()).trim();
+  const campana=($("rc").value||trimestreActual()).trim();
   try{
     toast("Calculando…"); const r=await api("campanas.reporte",{campana});
     const tasa = r.enviados ? Math.round(100*r.reservaron/r.enviados) : 0;
-    document.getElementById("rcbox").innerHTML=`<div class="kpi">
+    $("rcbox").innerHTML=`<div class="kpi">
       <div><b>${r.enviados}</b><span>Mensajes enviados</span></div>
       <div><b>${r.reservaron}</b><span>Jugaron en 14 días</span></div>
       <div><b>${tasa}%</b><span>Tasa de retorno</span></div>
