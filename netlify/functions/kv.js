@@ -4,37 +4,41 @@
    Única puerta entre el navegador y Supabase.
    La SUPABASE_SERVICE_ROLE_KEY vive SOLO aquí; nunca se envía al cliente.
 
-   ── PROTOCOLO (el que ya usa index.html; NO cambió) ──
+   ── PROTOCOLO ──
      POST JSON, campo "action":
-       { action:"auth",   code }                  → valida el código de entrada
-       { action:"get",    code, key }             → { key, value } | null
-       { action:"set",    code, key, value }      → { ok:true }
-       { action:"delete", code, key }             → { ok:true }
-       { action:"list",   code, prefix }          → { keys:[...] }
-       { action:"login",  code }                  → { ok:true, token } (opcional)
+       { action:"auth",    code }                        → valida el código de entrada
+       { action:"get",     code, key }                   → { key, value, version } | null
+       { action:"set",     code, key, value }            → { ok:true }
+       { action:"set",     code, key, value, ifVersion } → { ok:true, version } | 409 si otro escribió antes
+       { action:"mset",    code, items:[{key,value}] }   → { ok:true, n }   (varias claves, una llamada)
+       { action:"delete",  code, key }                   → { ok:true }
+       { action:"list",    code, prefix }                → { keys:[...] }
+       { action:"listv",   code, prefix }                → { items:[{key,value}] }  (máx. 500)
+       { action:"dia.get", code, fecha }                 → { cancha, historial, heartbeat } con versiones
+       { action:"login",   code }                        → { ok:true, token } (opcional)
 
-   ── SEGURIDAD (incorporada de SEGURIDAD.md, adaptada a este backend) ──
+   ── SEGURIDAD ──
      1. El código se valida ANTES de tocar la base de datos.
-     2. Comparación en tiempo constante (sha256 + timingSafeEqual): no filtra
-        ni el valor ni la longitud del código.
+     2. Comparación en tiempo constante (sha256 + timingSafeEqual).
      3. Códigos por-usuario opcionales (revocación individual).
-     4. Rate limiting por IP: frena la fuerza bruta de códigos (solo penaliza
-        los intentos FALLIDOS, para no ralentizar el uso normal).
-     5. Token de sesión firmado con caducidad (opcional): permite no dejar el
-        código "vivo" para siempre en el navegador. Compatible hacia atrás.
-     6. Código de SOLO LECTURA para la app de videos (claves video:* únicamente).
+     4. Rate limiting por IP: solo penaliza los intentos FALLIDOS.
+     5. Token de sesión firmado con caducidad (opcional).
+     6. Código de SOLO LECTURA para la app de videos (claves video:*).
+     7. Código de PEDIDOS para el worker del club: video:* (leer),
+        pedido:* y worker:* (leer/escribir). Nada más.
+     8. Escritura condicional por versión (ifVersion) para que dos
+        recepcionistas no se pisen una reserva.
 
-   ── VARIABLES DE ENTORNO (Netlify → Site configuration → Environment variables,
-      scope "Functions") ──
+   ── VARIABLES DE ENTORNO (scope "Functions") ──
      SUPABASE_URL                (obligatoria)
      SUPABASE_SERVICE_ROLE_KEY   (obligatoria, SOLO scope Functions)
-     APP_ACCESS_CODE             código único del staff (compatibilidad actual)
+     APP_ACCESS_CODE             código único del staff
         —o, en su lugar/además—
-     ACCESS_CODES                "david:codigo1,sary:codigo2" (uno por persona;
-                                 permite revocar a una sola quitando su línea)
+     ACCESS_CODES                "david:codigo1,sary:codigo2"
      APP_READ_CODE               (opcional) solo lectura para la app de videos
-     APP_PEDIDO_CODE             (opcional) acotado a pedido:* (cola) + lectura video:*
-     SESSION_SECRET              (opcional) para el token de sesión con caducidad
+     APP_PEDIDO_CODE             (recomendado) worker + app de videos
+     ADMIN_PIN / ADMIN_PINS      PIN del Panel
+     SESSION_SECRET              (opcional) token de sesión con caducidad
      SESSION_TTL_HOURS           (opcional) horas de validez del token (def. 12)
    ──────────────────────────────────────────────────────────────── */
 
@@ -48,8 +52,6 @@ const PEDIDO_CODE = process.env.APP_PEDIDO_CODE;
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const SESSION_TTL_HOURS = parseInt(process.env.SESSION_TTL_HOURS || "12", 10);
 
-/* Mapa usuario→código a partir de ACCESS_CODES ("david:xxx,sary:yyy").
-   El código único APP_ACCESS_CODE se añade como usuario "_staff". */
 function cargarCodigos() {
   const map = new Map();
   if (process.env.ACCESS_CODES) {
@@ -67,10 +69,6 @@ function cargarCodigos() {
 }
 const CODES = cargarCodigos();
 
-/* ── PIN del Panel (se valida AQUÍ, nunca en el navegador) ──
-   ADMIN_PIN        un PIN único para todo el club
-   ADMIN_PINS       "david:1234,sary:5678" (uno por persona; revocable individualmente)
-   ADMIN_TTL_HOURS  horas que dura la sesión de panel (def. 12) */
 function cargarPins() {
   const map = new Map();
   if (process.env.ADMIN_PINS) {
@@ -89,7 +87,6 @@ function cargarPins() {
 const PINS = cargarPins();
 const ADMIN_TTL_HOURS = parseInt(process.env.ADMIN_TTL_HOURS || "12", 10);
 
-/* Recorre TODOS los pines sin cortocircuito para no filtrar por temporización. */
 function usuarioDePin(pin) {
   if (!pin) return null;
   let encontrado = null;
@@ -121,9 +118,9 @@ function verificarAdmin(token) {
 }
 
 /* ── Rate limiting ── */
-const RL_MAX = 10; // intentos fallidos permitidos...
-const RL_WINDOW = 300; // ...cada 5 minutos
-const RL_BLOCK = 900; // bloqueo de 15 min al superarlos
+const RL_MAX = 10;
+const RL_WINDOW = 300;
+const RL_BLOCK = 900;
 
 const JSON_HEADERS = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
@@ -139,16 +136,12 @@ function cabecerasSupabase(extra) {
   }, extra || {});
 }
 
-/* Comparación en tiempo constante. Se hashea cada lado para igualar longitud
-   (timingSafeEqual exige buffers del mismo tamaño) y no filtrar la longitud. */
 function igualSeguro(a, b) {
   const ha = crypto.createHash("sha256").update(String(a || "")).digest();
   const hb = crypto.createHash("sha256").update(String(b || "")).digest();
   return crypto.timingSafeEqual(ha, hb);
 }
 
-/* ¿El código coincide con el de algún usuario? Recorre TODOS sin cortocircuito
-   para no filtrar por temporización qué usuario existe. Devuelve el usuario o null. */
 function usuarioDeCodigo(code) {
   if (!code) return null;
   let encontrado = null;
@@ -158,7 +151,6 @@ function usuarioDeCodigo(code) {
   return encontrado;
 }
 
-/* ── Token de sesión firmado (HMAC) con caducidad ── */
 function base64url(buf) {
   return Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
@@ -177,19 +169,19 @@ function verificarToken(token) {
   if (!igualSeguro(p[1], esperado)) return null;
   try {
     const data = JSON.parse(Buffer.from(p[0].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
-    if (!data.exp || Date.now() > data.exp) return null; // caducado
+    if (!data.exp || Date.now() > data.exp) return null;
     return data.u || "_staff";
   } catch (_) {
     return null;
   }
 }
 
-/* ── Acceso crudo a la tabla kv de Supabase (reutilizado por datos y rate-limit) ── */
+/* ── Acceso crudo a la tabla kv ── */
 function tablaKV() {
   return URL_BASE.replace(/\/+$/, "") + "/rest/v1/kv";
 }
 async function kvGet(key) {
-  const r = await fetch(tablaKV() + "?key=eq." + encodeURIComponent(key) + "&select=key,value",
+  const r = await fetch(tablaKV() + "?key=eq." + encodeURIComponent(key) + "&select=key,value,version",
     { headers: cabecerasSupabase() });
   if (!r.ok) throw new Error("Supabase: " + (await r.text()));
   const filas = await r.json();
@@ -203,13 +195,53 @@ async function kvSet(key, value) {
   });
   if (!r.ok) throw new Error("Supabase: " + (await r.text()));
 }
+/* Escritura condicional: solo si la versión guardada es la que el cliente leyó.
+   Devuelve la versión nueva o null si alguien escribió antes (conflicto). */
+async function kvSetSi(key, value, ifVersion) {
+  if (ifVersion === 0) {
+    // El documento no existía cuando el cliente lo leyó: insertar sin pisar.
+    const r = await fetch(tablaKV(), {
+      method: "POST",
+      headers: cabecerasSupabase({ Prefer: "return=representation" }),
+      body: JSON.stringify({ key, value }),
+    });
+    if (r.status === 409) return null;
+    if (!r.ok) throw new Error("Supabase: " + (await r.text()));
+    const filas = await r.json();
+    return filas.length ? (filas[0].version || 0) : 0;
+  }
+  const r = await fetch(tablaKV() + "?key=eq." + encodeURIComponent(key) + "&version=eq." + ifVersion, {
+    method: "PATCH",
+    headers: cabecerasSupabase({ Prefer: "return=representation" }),
+    body: JSON.stringify({ value }),
+  });
+  if (!r.ok) throw new Error("Supabase: " + (await r.text()));
+  const filas = await r.json();
+  if (!filas.length) return null;
+  return filas[0].version;
+}
+async function kvMSet(items) {
+  const r = await fetch(tablaKV(), {
+    method: "POST",
+    headers: cabecerasSupabase({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+    body: JSON.stringify(items),
+  });
+  if (!r.ok) throw new Error("Supabase: " + (await r.text()));
+}
 async function kvDel(key) {
   const r = await fetch(tablaKV() + "?key=eq." + encodeURIComponent(key),
     { method: "DELETE", headers: cabecerasSupabase({ Prefer: "return=minimal" }) });
   if (!r.ok) throw new Error("Supabase: " + (await r.text()));
 }
+async function kvVarios(keys) {
+  const lista = "(" + keys.map(k => '"' + k.replace(/"/g, "") + '"').join(",") + ")";
+  const r = await fetch(tablaKV() + "?key=in." + encodeURIComponent(lista) + "&select=key,value,version",
+    { headers: cabecerasSupabase() });
+  if (!r.ok) throw new Error("Supabase: " + (await r.text()));
+  return r.json();
+}
 
-/* Estado de bloqueo por IP. Solo LEE (no penaliza el tráfico legítimo). */
+/* Rate limit por IP: solo lee; penaliza únicamente fallos. */
 async function rlEstado(ip) {
   const now = Math.floor(Date.now() / 1000);
   let rec = null;
@@ -222,7 +254,6 @@ async function rlEstado(ip) {
   }
   return { bloqueado: false, rec };
 }
-/* Registra un intento FALLIDO y bloquea si se pasa del límite. */
 async function rlFallo(ip, recPrevio) {
   const now = Math.floor(Date.now() / 1000);
   let rec = recPrevio || { count: 0, start: now, blockedUntil: 0 };
@@ -231,10 +262,24 @@ async function rlFallo(ip, recPrevio) {
   if (rec.count > RL_MAX) rec.blockedUntil = now + RL_BLOCK;
   try { await kvSet("rl:" + ip, JSON.stringify(rec)); } catch (_) {}
 }
-/* Limpia el contador tras un acceso válido (si lo había). */
 async function rlLimpiar(ip, recPrevio) {
   if (!recPrevio) return;
   try { await kvDel("rl:" + ip); } catch (_) {}
+}
+
+const RE_CLAVE = /^[\w:.-]{1,200}$/;
+const RE_PREFIJO = /^[\w:.-]{0,200}$/;
+const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+/* ¿Puede este rol hacer `accion` (leer|escribir) sobre `clave`? Solo para no-admin. */
+function permitido(rol, accion, clave) {
+  const c = String(clave || "");
+  if (rol === "lectura") return accion === "leer" && c.indexOf("video:") === 0;
+  if (rol === "pedido") {
+    if (c.indexOf("video:") === 0) return accion === "leer";
+    return c.indexOf("pedido:") === 0 || c.indexOf("worker:") === 0;
+  }
+  return false;
 }
 
 exports.handler = async function (event) {
@@ -244,12 +289,10 @@ exports.handler = async function (event) {
     return respuesta(500, { error: "Faltan variables de entorno en Netlify" });
   }
 
-  // IP del cliente (Netlify la pone en estas cabeceras).
   const h = event.headers || {};
   const ip = (h["x-nf-client-connection-ip"] || h["client-ip"] ||
     (h["x-forwarded-for"] || "").split(",")[0] || "unknown").trim();
 
-  // ── Rate limit: primero solo comprobamos si esta IP está bloqueada. ──
   const rl = await rlEstado(ip);
   if (rl.bloqueado) {
     return respuesta(429, { error: "Demasiados intentos. Espera un momento." },
@@ -263,30 +306,26 @@ exports.handler = async function (event) {
   const { action, code, key, value, prefix, token } = cuerpo;
 
   // ── Autenticación (antes de cualquier operación de datos) ──
-  // Acepta token de sesión (preferido) O código (compatibilidad con el cliente actual).
   let usuario = verificarToken(token);
   if (!usuario) usuario = usuarioDeCodigo(code);
   const esAdmin = !!usuario;
   const esLectura = !esAdmin && READ_CODE ? igualSeguro(code, READ_CODE) : false;
   const esPedido = !esAdmin && !esLectura && PEDIDO_CODE ? igualSeguro(code, PEDIDO_CODE) : false;
+  const rol = esAdmin ? "admin" : esLectura ? "lectura" : esPedido ? "pedido" : null;
 
-  if (!esAdmin && !esLectura && !esPedido) {
-    await rlFallo(ip, rl.rec); // credencial inválida → cuenta como intento fallido
+  if (!rol) {
+    await rlFallo(ip, rl.rec);
     return respuesta(401, { error: "Código incorrecto" });
   }
-
-  // Acceso válido → no penalizar; limpiar el contador si existía.
   await rlLimpiar(ip, rl.rec);
 
-  if (action === "auth") return respuesta(200, { ok: true, modo: esAdmin ? "admin" : (esPedido ? "pedido" : "lectura") });
+  if (action === "auth") return respuesta(200, { ok: true, modo: rol });
   if (action === "login") {
     const t = esAdmin ? firmarToken(usuario) : null;
     return respuesta(200, { ok: true, token: t, ttlHours: SESSION_TTL_HOURS });
   }
 
   // ── Panel de administración ──
-  // El PIN vive en Netlify, no en el navegador. Tiene su propio contador de
-  // intentos (rl:pin:<ip>) para que un código de staff válido no lo reinicie.
   if (action === "admin.login" || action === "admin.verify") {
     if (!esAdmin) return respuesta(403, { error: "Solo el staff puede abrir el panel" });
 
@@ -312,45 +351,73 @@ exports.handler = async function (event) {
     return respuesta(200, { ok: true, usuario: u, adminToken: firmarAdmin(u), ttlHours: ADMIN_TTL_HOURS });
   }
 
-  // Permisos de los códigos acotados (no-admin).
+  // ── Lectura de un día completo (solo staff): reservas + historial + latido del worker ──
+  if (action === "dia.get") {
+    if (!esAdmin) return respuesta(403, { error: "Solo el staff puede leer el día" });
+    const fecha = String(cuerpo.fecha || "");
+    if (!RE_FECHA.test(fecha)) return respuesta(400, { error: "Fecha inválida (AAAA-MM-DD)" });
+    try {
+      const filas = await kvVarios(["cancha:" + fecha, "historial:" + fecha, "worker:heartbeat"]);
+      const por = {};
+      for (const f of filas) por[f.key] = { value: f.value, version: f.version || 0 };
+      return respuesta(200, {
+        fecha,
+        cancha: por["cancha:" + fecha] || null,
+        historial: por["historial:" + fecha] || null,
+        heartbeat: por["worker:heartbeat"] ? { value: por["worker:heartbeat"].value } : null,
+      });
+    } catch (e) {
+      return respuesta(500, { error: "Error interno: " + e.message });
+    }
+  }
+
+  // ── Permisos de los códigos acotados (no-admin) ──
   if (!esAdmin) {
-    const objetivo = action === "list" ? String(prefix || "") : String(key || "");
-    if (esLectura) {
-      // App de videos (solo lectura de reservas): get/list sobre video:*
-      if (action !== "get" && action !== "list") {
-        return respuesta(403, { error: "Código de solo lectura: solo get/list" });
+    if (action === "mset") {
+      const items = Array.isArray(cuerpo.items) ? cuerpo.items : [];
+      for (const it of items) {
+        if (!permitido(rol, "escribir", it && it.key)) return respuesta(403, { error: "Este código no puede escribir " + (it && it.key) });
       }
-      if (objetivo.indexOf("video:") !== 0) {
-        return respuesta(403, { error: "Código de solo lectura: solo claves video:*" });
-      }
-    } else if (esPedido) {
-      // Cola de videos: get/set/delete/list sobre pedido:*, y get/list sobre video:*
-      if (objetivo.indexOf("video:") === 0) {
-        if (action !== "get" && action !== "list") {
-          return respuesta(403, { error: "Código de pedidos: video:* es solo lectura" });
-        }
-      } else if (objetivo.indexOf("pedido:") !== 0) {
-        return respuesta(403, { error: "Código de pedidos: solo claves pedido:* y video:*" });
+    } else {
+      const objetivo = (action === "list" || action === "listv") ? String(prefix || "") : String(key || "");
+      const accion = (action === "get" || action === "list" || action === "listv") ? "leer" : "escribir";
+      if (!permitido(rol, accion, objetivo)) {
+        return respuesta(403, { error: "Este código no puede " + accion + " " + (objetivo || "(sin clave)") });
       }
     }
   }
 
-  // Claves permitidas: letras, números y : . - _  (evita inyección en la query)
-  if (action !== "list" && !/^[\w:.-]{1,200}$/.test(key || "")) {
+  if (action !== "list" && action !== "listv" && action !== "mset" && !RE_CLAVE.test(key || "")) {
     return respuesta(400, { error: "Clave inválida" });
   }
 
   try {
     if (action === "get") {
       const fila = await kvGet(key);
-      return respuesta(200, fila ? { key: fila.key, value: fila.value } : null);
+      return respuesta(200, fila ? { key: fila.key, value: fila.value, version: fila.version || 0 } : null);
     }
 
     if (action === "set") {
       if (typeof value !== "string") return respuesta(400, { error: "value debe ser texto" });
       if (value.length > 5000000) return respuesta(413, { error: "Valor demasiado grande" });
+      if (typeof cuerpo.ifVersion === "number") {
+        const v = await kvSetSi(key, value, cuerpo.ifVersion);
+        if (v === null) return respuesta(409, { error: "Alguien más modificó este día hace un momento. Se recargó; intenta de nuevo.", conflicto: true });
+        return respuesta(200, { ok: true, key, version: v });
+      }
       await kvSet(key, value);
       return respuesta(200, { ok: true, key });
+    }
+
+    if (action === "mset") {
+      const items = Array.isArray(cuerpo.items) ? cuerpo.items : [];
+      if (!items.length || items.length > 50) return respuesta(400, { error: "items debe tener entre 1 y 50 claves" });
+      for (const it of items) {
+        if (!it || !RE_CLAVE.test(it.key || "")) return respuesta(400, { error: "Clave inválida: " + (it && it.key) });
+        if (typeof it.value !== "string" || it.value.length > 5000000) return respuesta(400, { error: "value debe ser texto: " + it.key });
+      }
+      await kvMSet(items.map(it => ({ key: it.key, value: it.value })));
+      return respuesta(200, { ok: true, n: items.length });
     }
 
     if (action === "delete") {
@@ -358,14 +425,16 @@ exports.handler = async function (event) {
       return respuesta(200, { ok: true, deleted: true, key });
     }
 
-    if (action === "list") {
+    if (action === "list" || action === "listv") {
       const p = String(prefix || "");
-      if (!/^[\w:.-]{0,200}$/.test(p)) return respuesta(400, { error: "Prefijo inválido" });
-      const r = await fetch(tablaKV() + "?key=like." + encodeURIComponent(p + "%") + "&select=key",
+      if (!RE_PREFIJO.test(p)) return respuesta(400, { error: "Prefijo inválido" });
+      const select = action === "listv" ? "key,value" : "key";
+      const r = await fetch(tablaKV() + "?key=like." + encodeURIComponent(p + "%") + "&select=" + select + "&order=key.asc&limit=500",
         { headers: cabecerasSupabase() });
       if (!r.ok) return respuesta(502, { error: "Supabase: " + (await r.text()) });
       const filas = await r.json();
-      return respuesta(200, { keys: filas.map(function (f) { return f.key; }), prefix: p });
+      if (action === "listv") return respuesta(200, { items: filas.map(f => ({ key: f.key, value: f.value })), prefix: p });
+      return respuesta(200, { keys: filas.map(f => f.key), prefix: p });
     }
 
     return respuesta(400, { error: "Acción desconocida" });

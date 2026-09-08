@@ -1,0 +1,13 @@
+# Dependencias y build
+node_modules/
+.netlify/
+dist/
+
+# Secretos - nunca subir
+.env
+.env.*
+!.env.example
+
+# Sistema
+.DS_Store
+Thumbs.db

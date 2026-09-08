@@ -9,18 +9,39 @@
 [functions."loyaltycron"]
   schedule = "0 6 * * *"
 
-# Cron diario (09:00 America/Bogotá = 14:00 UTC): correo del día siguiente
-# con resumen del partido + video + premiación + reactivación.
+# Cron diario (09:00 America/Bogotá = 14:00 UTC): correo del día siguiente.
+# Solo dice "ya está tu video" si el worker lo marcó como listo.
 [functions."correo-diario"]
   schedule = "0 14 * * *"
 
-# ── No servir código de servidor como archivo estático ──
-# publish = "." publica todo el repo. confirmacion.js vivía en la raíz y se
-# podía leer entero desde padelmanagerb.netlify.app/confirmacion.js.
-# Ahora vive en netlify/functions/, pero dejamos la regla por si queda
-# cacheado un deploy viejo.
+# ── No servir nada que no sea la app ──
+# publish = "." publica todo el repo. Estas reglas devuelven 404 en lo interno.
 [[redirects]]
   from = "/confirmacion.js"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/supabase/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
   to = "/index.html"
   status = 404
   force = true
@@ -31,8 +52,15 @@
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
 
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Cache-Control = "no-store"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"

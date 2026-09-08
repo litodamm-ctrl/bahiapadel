@@ -40,6 +40,7 @@ const CLUB_NAME   = process.env.CLUB_NAME || "Bahía Padel Social Club";
 const CLUB_ADDR   = process.env.CLUB_ADDRESS || "Bahía Padel Social Club";
 const CLUB_MAPS   = process.env.CLUB_MAPS_URL || "";
 const WEB_URL     = process.env.WEB_URL || "https://bahiapadel.com";
+const REPLAY_URL  = (process.env.REPLAY_URL || "https://padelreplay.netlify.app/").replace(/\/?$/, "/");
 const ORGANIZER   = (MAIL_REPLY || (MAIL_FROM.match(/<([^>]+)>/) || [])[1] || "reservas@bahiapadel.com").trim();
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
@@ -273,7 +274,10 @@ function descripcionEvento(r) {
   if (r.name) l.push("A nombre de: " + r.name);
   if (r.phone) l.push("Contacto: " + r.phone);
   if (r.comment) l.push("Nota: " + r.comment);
-  if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
+  if (r.codigo_video) {
+    l.push("Código de video: " + r.codigo_video);
+    l.push("Tu partido queda grabado en video. Cuando termine, míralo aquí: " + REPLAY_URL + "?codigo=" + r.codigo_video);
+  }
   if (CLUB_MAPS) l.push("Cómo llegar: " + CLUB_MAPS);
   l.push(WEB_URL);
   return l.join("\n");
@@ -300,7 +304,12 @@ function correoHtml(r, ev, gcal, outlook) {
     fila("💵 Valor", precioTexto(r)) +
     fila("💳 Pago", "En el club") +
     fila("📝 Nota", r.comment || "") +
-    fila("🎬 Código de video", r.codigo_video || "");
+    fila("🎬 Código de video", r.codigo_video || "") +
+    (r.codigo_video
+      ? '<tr><td colspan="2" style="padding:10px 0 3px;font-size:13px;color:#4B6167;line-height:1.5;">Tu partido queda grabado en video. Cuando termine, míralo en ' +
+        '<a href="' + esc(REPLAY_URL + "?codigo=" + r.codigo_video) + '" style="color:#1F9E92;font-weight:bold;">padelreplay</a>. ' +
+        'El club conserva los videos 30 días; puedes pedir su borrado por WhatsApp.</td></tr>'
+      : "");
 
   /* Bloque de premio: el mismo texto que va por WhatsApp. */
   const premio = String(r.premio_texto || "").trim();
@@ -357,7 +366,10 @@ function correoTexto(r, gcal) {
   if (pr) l.push("Valor: " + pr);
   l.push("Pago: en el club");
   if (r.comment) l.push("Nota: " + r.comment);
-  if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
+  if (r.codigo_video) {
+    l.push("Código de video: " + r.codigo_video);
+    l.push("Tu partido queda grabado en video. Cuando termine, míralo aquí: " + REPLAY_URL + "?codigo=" + r.codigo_video);
+  }
   const premio = String(r.premio_texto || "").trim();
   if (premio) { l.push(""); l.push(premio); }
   l.push("");
@@ -388,7 +400,10 @@ function textoWhatsApp(r, gcal, metodo) {
   if (pr) l.push("Valor: " + pr);
   l.push("Pago: en el club");
   if (r.comment) l.push("Nota: " + r.comment);
-  if (r.codigo_video) l.push("Código de video: " + r.codigo_video);
+  if (r.codigo_video) {
+    l.push("Código de video: " + r.codigo_video);
+    l.push("Tu partido queda grabado en video. Cuando termine, míralo aquí: " + REPLAY_URL + "?codigo=" + r.codigo_video);
+  }
   l.push("");
   l.push("Agrégala a tu calendario: " + gcal);
   if (r.email) l.push("También te enviamos la invitación a " + r.email + ".");
