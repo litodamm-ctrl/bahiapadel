@@ -308,7 +308,7 @@ function correoHtml(r, ev, gcal, outlook) {
     (r.codigo_video
       ? '<tr><td colspan="2" style="padding:10px 0 3px;font-size:13px;color:#4B6167;line-height:1.5;">Tu partido queda grabado en video. Cuando termine, míralo en ' +
         '<a href="' + esc(REPLAY_URL + "?codigo=" + r.codigo_video) + '" style="color:#1F9E92;font-weight:bold;">padelreplay</a>. ' +
-        'El club conserva los videos 30 días; puedes pedir su borrado por WhatsApp.</td></tr>'
+        'El club conserva los videos 8 días; puedes pedir su borrado por WhatsApp.</td></tr>'
       : "");
 
   /* Bloque de premio: el mismo texto que va por WhatsApp. */
