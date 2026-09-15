@@ -1,0 +1,44 @@
+name: Add premiaciones tab
+
+on:
+  push:
+    paths:
+      - .github/workflows/add-premiaciones-tab.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Install premiaciones tab patch workflow'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add Premiaciones tab to Padel Manager
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old_tabs = "const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'] ];"
+          new_tabs = "const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'], ['premios','Premiaciones'] ];"
+          old_select = "function selectTab(tab){ state.tab = tab; render(); }"
+          new_select = "function selectTab(tab){\n  if(tab === 'premios'){ window.location.href = '/premiosreactivacion.html'; return; }\n  state.tab = tab; render();\n}"
+          if old_tabs not in s:
+              raise SystemExit('No se encontró el bloque de tabs esperado')
+          if old_select not in s:
+              raise SystemExit('No se encontró selectTab esperado')
+          s = s.replace(old_tabs, new_tabs, 1).replace(old_select, new_select, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit change
+        shell: bash
+        run: |
+          git config user.name "Bahia Padel Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add Premiaciones tab to Padel Manager"
+          git push origin HEAD:main
