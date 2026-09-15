@@ -22,6 +22,12 @@
 
 # Redeploy marker: refreshed RESEND_API_KEY for production confirmations.
 
+# Enlace corto usado en WhatsApp para añadir la reserva a Google Calendar.
+[[redirects]]
+  from = "/c"
+  to = "/calendario.html"
+  status = 200
+
 # ── No servir nada que no sea la app ──
 # publish = "." publica todo el repo. Estas reglas devuelven 404 en lo interno.
 [[redirects]]
