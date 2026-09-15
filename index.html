@@ -917,7 +917,10 @@ async function manualRefresh(){
 
 /* ---------- ACCIONES: navegación ---------- */
 async function selectDate(d){ state.selectedDate = d; await loadDateData(); }
-function selectTab(tab){ state.tab = tab; render(); }
+function selectTab(tab){
+  if(tab === 'premios'){ window.location.href = '/premiosreactivacion.html'; return; }
+  state.tab = tab; render();
+}
 async function openSlotModal(time, court){
   state.modal = { type:'court-flow', time, court };
   resetBookingFlow();
@@ -1406,7 +1409,7 @@ function renderLockScreen(){
 /* ---------- RENDER: NAV ---------- */
 function renderNav(){
   const nav = document.getElementById('tabsNav');
-  const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'] ];
+  const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'], ['premios','Premiaciones'] ];
   nav.innerHTML = tabs.map(([id,label]) =>
     `<button class="tab-btn ${state.tab===id?'active':''}" data-tab="${id}">${label}</button>`
   ).join('') + `<button class="tab-btn lock-btn" id="lockAppBtn" title="Bloquear la app en este equipo" aria-label="Bloquear la app en este equipo">${ic('lock')}</button>`;
