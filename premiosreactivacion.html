@@ -20,6 +20,11 @@ header{background:linear-gradient(160deg,var(--bay-deep),var(--bay-deep-2));padd
 .wm{font-family:var(--fd);font-size:34px;letter-spacing:1.5px;color:#fff;line-height:1;}
 .tag{font-family:var(--fm);font-size:11px;color:#9FD4CC;text-transform:uppercase;margin-top:5px;}
 .chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#DCEFEC;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;}
+.hi-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+.back-manager{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:var(--coral);color:#fff;border:1px solid var(--coral);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap;}
+.back-manager:hover{background:var(--coral-dark);border-color:var(--coral-dark);}
+.back-manager:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+@media(max-width:560px){.hi{align-items:flex-start}.hi-actions{gap:6px}.back-manager{padding:7px 11px;font-size:12px}}
 main{max-width:900px;margin:0 auto;padding:20px;}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
 .tab{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-soft);cursor:pointer;font-family:inherit;}
@@ -56,7 +61,7 @@ th{color:var(--ink-soft);font-weight:600;font-size:12px;text-transform:uppercase
 <body>
 <header><div class="hi">
   <div><div class="wm">BAHÍA PADEL</div><div class="tag">Premios · Reactivación</div></div>
-  <div class="chip" id="userChip">Recepción</div>
+  <div class="hi-actions"><a class="back-manager" href="/">← Volver a reservas</a><div class="chip" id="userChip">Recepción</div></div>
 </div></header>
 <main id="main"></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
