@@ -14,6 +14,12 @@
 [functions."correo-diario"]
   schedule = "0 14 * * *"
 
+# Respaldo de confirmaciones: cada 2 minutos reintenta únicamente reservas
+# con correo que todavía no tengan marcador invite:<groupId>. confirmacion.js
+# es idempotente, así que no duplica los correos ya enviados.
+[functions."confirmacion-pendiente"]
+  schedule = "*/2 * * * *"
+
 # ── No servir nada que no sea la app ──
 # publish = "." publica todo el repo. Estas reglas devuelven 404 en lo interno.
 [[redirects]]
