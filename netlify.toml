@@ -20,6 +20,8 @@
 [functions."confirmacion-pendiente"]
   schedule = "*/2 * * * *"
 
+# Redeploy marker: refreshed RESEND_API_KEY for production confirmations.
+
 # ── No servir nada que no sea la app ──
 # publish = "." publica todo el repo. Estas reglas devuelven 404 en lo interno.
 [[redirects]]
