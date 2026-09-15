@@ -211,6 +211,16 @@ function linkGoogle(ev) {
   });
   return "https://calendar.google.com/calendar/render?" + p.toString();
 }
+function linkGoogleCorto(r) {
+  const d = String(r.fecha || "").replace(/\D/g, "");
+  const ini = String(r.startTime || "").replace(/\D/g, "").slice(0, 4);
+  const fin = String(r.endTime || "").replace(/\D/g, "").slice(0, 4);
+  const mc = String(r.court || "").match(/\d+/);
+  const p = new URLSearchParams({ d, h: ini + "-" + fin });
+  if (mc) p.set("c", mc[0]);
+  return "https://padelmanagerb.netlify.app/c?" + p.toString();
+}
+
 function linkOutlook(ev) {
   const p = new URLSearchParams({
     path: "/calendar/action/compose",
@@ -493,7 +503,7 @@ exports.handler = async function (event) {
     return resp(200, {
       ok: true, repetido: true, correo_enviado: false,
       gcal: linkGoogle(evPrev), outlook: linkOutlook(evPrev),
-      wa_text: textoWhatsApp(r, linkGoogle(evPrev), "REQUEST"),
+      wa_text: textoWhatsApp(r, linkGoogleCorto(r), "REQUEST"),
     });
   }
 
@@ -506,9 +516,10 @@ exports.handler = async function (event) {
     descripcion: descripcionEvento(r),
   };
 
-  const gcal    = linkGoogle(ev);
-  const outlook = linkOutlook(ev);
-  const wa_text = textoWhatsApp(r, gcal, metodo);
+  const gcal      = linkGoogle(ev);
+  const gcalCorto = linkGoogleCorto(r);
+  const outlook   = linkOutlook(ev);
+  const wa_text   = textoWhatsApp(r, gcalCorto, metodo);
 
   const salida = {
     ok: true, correo_enviado: false, gcal, outlook, wa_text,
