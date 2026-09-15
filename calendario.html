@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bahía Pádel · Calendario</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E3B43;color:#fff;font-family:Arial,Helvetica,sans-serif}
+main{text-align:center;padding:24px;max-width:460px}.logo{font-size:28px;font-weight:700;letter-spacing:1px}.msg{margin-top:12px;color:#DCEFEC;line-height:1.5}a{color:#fff}
+</style>
+</head>
+<body>
+<main><div class="logo">BAHÍA PÁDEL</div><div class="msg" id="msg">Abriendo tu calendario…</div></main>
+<script>
+(function(){
+  'use strict';
+  var q=new URLSearchParams(location.search);
+  var d=(q.get('d')||'').replace(/\D/g,'');
+  var h=(q.get('h')||'');
+  var cancha=(q.get('c')||'').replace(/[^A-Za-z0-9 -]/g,'');
+  var m=/^(\d{4})-(\d{4})$/.exec(h);
+  if(!/^\d{8}$/.test(d)||!m){
+    document.getElementById('msg').textContent='El enlace de calendario no es válido.';
+    return;
+  }
+  function stamp(hhmm){
+    var y=+d.slice(0,4), mo=+d.slice(4,6), day=+d.slice(6,8);
+    var hh=+hhmm.slice(0,2), mm=+hhmm.slice(2,4);
+    var dt=new Date(Date.UTC(y,mo-1,day,hh+5,mm,0));
+    return dt.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  }
+  var titulo='Pádel · Bahía Pádel & Social Club'+(cancha?' (Cancha '+cancha+')':'');
+  var p=new URLSearchParams({
+    action:'TEMPLATE',
+    text:titulo,
+    dates:stamp(m[1])+'/'+stamp(m[2]),
+    details:'Reserva confirmada en Bahía Pádel & Social Club.',
+    location:'Calle 29 #18b-29, Manga, Cartagena de Indias, Bolívar',
+    ctz:'America/Bogota'
+  });
+  location.replace('https://calendar.google.com/calendar/render?'+p.toString());
+})();
+</script>
+</body>
+</html>
