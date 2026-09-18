@@ -226,6 +226,9 @@
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important; animation:none !important;}
   }
+
+  .payment-box{border:1px solid #cfe0dd;background:#f7fbfa;border-radius:12px;padding:14px;margin:0 0 18px}.payment-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.payment-head>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.payment-badge,.payment-mini{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.payment-badge.paid,.payment-mini.paid{background:#d9f3e8;color:#166b50}.payment-badge.partial,.payment-mini.partial{background:#fff1c9;color:#7b5a00}.payment-badge.pending,.payment-mini.pending{background:#fde2dd;color:#9b3426}.payment-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.payment-summary div{background:#fff;border-radius:9px;padding:9px;text-align:center}.payment-summary span{display:block;font-size:11px;color:#64777a}.payment-summary strong{display:block;margin-top:2px;color:#0E3B43;font-size:14px}.payment-add{border-top:1px solid #dce9e7;padding-top:12px}.payment-add-btn{width:100%;margin-bottom:10px}.payment-history{border-top:1px solid #dce9e7;padding-top:10px;margin-top:8px}.payment-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid #e7efed;font-size:13px}.payment-row small{display:block;color:#6d7d80;font-size:11px;margin-top:3px}.payment-delete{background:transparent!important;color:#b43c2f!important;border:0!important;padding:3px 5px!important;min-height:auto!important;font-size:11px!important}.payment-empty,.payment-wait,.payment-complete{font-size:12px;color:#607477;padding:8px 0}.payment-complete{color:#166b50;font-weight:700}.pay-link{background:#1F9E92!important;color:#fff!important}.payment-mini{margin-left:6px}
+  @media(max-width:560px){.payment-summary{grid-template-columns:1fr 1fr 1fr}.payment-summary strong{font-size:12px}}
 </style>
 </head>
 <body>
@@ -404,6 +407,7 @@ const DURATIONS = [
 ];
 
 const TRAINERS = ['Tomás', 'Isaías'];
+const PAYMENT_METHODS = ['Efectivo','Tarjeta de crédito','Tarjeta de débito','Cheque','Transferencia','Descuento','Factura manual'];
 const CLASS_BASE_RATE_PER_HOUR = 150000;
 const CLASS_EXTRA_PERSON_PER_HOUR = 20000;
 
@@ -634,7 +638,1789 @@ function isPastSlot(time){
   return slotDateTime.getTime() <= now.getTime();
 }
 function formatCOP(n){
-  return '$' + Math.round(n).toLocaleString('es-CO');
+  return '
+function courtOccupancyPercent(court){
+  let occupied = 0;
+  TIME_SLOTS.forEach(t=>{ if(state.courtBookings[`${t}|${court}`]) occupied++; });
+  return Math.round((occupied / TIME_SLOTS.length) * 100);
+}
+function occBadgeClass(pct){
+  if(pct>=75) return 'occ-high';
+  if(pct>=40) return 'occ-mid';
+  return 'occ-low';
+}
+function discountFactor(courtesy){
+  if(courtesy==='full') return 0;
+  if(courtesy==='quarter') return 0.75;
+  return 1;
+}
+
+/* ---------- PRECIOS ---------- */
+function courtSlotPrice(time){
+  const [h,m] = time.split(':').map(Number);
+  const totalMin = h*60+m;
+  if(totalMin >= 11*60 && totalMin < 15*60) return 40000;
+  if(totalMin >= 17*60) return 70000;
+  return 50000;
+}
+function priceShortLabel(n){
+  return Math.round(n/1000) + 'k';
+}
+function courtPriceForRange(startTime, slots){
+  const idx = TIME_SLOTS.indexOf(startTime);
+  let total = 0;
+  for(let i=0;i<slots;i++){
+    const t = TIME_SLOTS[idx+i];
+    if(!t) break;
+    total += courtSlotPrice(t);
+  }
+  return total;
+}
+function classPriceForRange(players, slots){
+  const hours = slots * 0.5;
+  const perHour = CLASS_BASE_RATE_PER_HOUR + CLASS_EXTRA_PERSON_PER_HOUR * Math.max(0, players-1);
+  return perHour * hours;
+}
+
+/* ---------- WHATSAPP ---------- */
+function toWhatsAppNumber(phone){
+  let digits = String(phone).replace(/\D/g,'');
+  if(digits.length===10 && digits.startsWith('3')) digits = '57'+digits;
+  return digits;
+}
+function buildWhatsAppLink(phone, message){
+  return `https://wa.me/${toWhatsAppNumber(phone)}?text=${encodeURIComponent(message)}`;
+}
+/* Código de video: identificador corto y único que enlaza cada reserva con
+   la app de grabaciones. Alfabeto sin caracteres ambiguos (0/O, 1/I/L). */
+function nuevoCodigoVideo(){
+  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0;i<6;i++) s += abc[Math.floor(Math.random()*abc.length)];
+  // Se antepone una porción del tiempo para minimizar aún más las colisiones.
+  const t = Date.now().toString(36).slice(-2).toUpperCase();
+  return `BP-${t}${s}`;
+}
+function lineaVideo(codigo){
+  return codigo ? `\nTu partido queda grabado en video. Cuando termine, míralo aquí: ${REPLAY_URL}?codigo=${codigo}\nCódigo de video: ${codigo}` : '';
+}
+function buildCourtWhatsAppMessage(name, court, dateStr, start, end, codigoVideo){
+  return `Hola ${name}! Tu reserva en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos en cancha!`;
+}
+function buildClaseWhatsAppMessage(name, trainer, court, dateStr, start, end, players, codigoVideo){
+  return `Hola ${name}! Tu clase con ${trainer} en Bahía Padel quedó confirmada.\nCancha: ${court}\nFecha: ${dateStr}\nHora: ${start} a ${end}\nPago: en el club${lineaVideo(codigoVideo)}\nTe esperamos!`;
+}
+
+/* ---------- CSV ---------- */
+function toCSV(rows, columns){
+  const header = columns.map(c=>c.label).join(',');
+  const lines = rows.map(r=> columns.map(c=>{
+    let v = c.get(r);
+    v = (v===undefined || v===null) ? '' : String(v);
+    if(v.indexOf(',')>-1 || v.indexOf('"')>-1 || v.indexOf('\n')>-1){
+      v = '"' + v.replace(/"/g,'""') + '"';
+    }
+    return v;
+  }).join(','));
+  return [header, ...lines].join('\n');
+}
+function downloadCSV(filename, csvContent){
+  const blob = new Blob(['\uFEFF' + csvContent], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+async function gatherRangeEntries(startDateStr, endDateStr, filterFn){
+  const [sy,sm,sd] = startDateStr.split('-').map(Number);
+  const [ey,em,ed] = endDateStr.split('-').map(Number);
+  const start = new Date(sy, sm-1, sd);
+  const end = new Date(ey, em-1, ed);
+  const results = [];
+  const cursor = new Date(start);
+  while(cursor <= end){
+    const dateStr = fmtDate(cursor);
+    const bookings = await loadCourtBookings(dateStr);
+    const seen = new Set();
+    Object.values(bookings).forEach(b=>{
+      if(!b || seen.has(b.groupId)) return;
+      seen.add(b.groupId);
+      if(filterFn(b)) results.push({ date:dateStr, ...b });
+    });
+    cursor.setDate(cursor.getDate()+1);
+  }
+  results.sort((a,b)=> a.date===b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date));
+  return results;
+}
+
+/* ---------- STORAGE: reservas / historial ---------- */
+async function loadCourtBookings(dateStr){
+  try{
+    const res = await window.storage.get(`cancha:${dateStr}`, true);
+    dayVersions[dateStr] = res ? (res.version || 0) : 0;
+    return res ? JSON.parse(res.value) : {};
+  }catch(e){ return {}; }
+}
+/* Lee reservas + historial + latido del worker en UNA llamada (dia.get).
+   Si el servidor todavía no la tiene, cae a las lecturas de siempre. */
+async function cargarDia(dateStr){
+  try{
+    const r = await window.__api('dia.get', { fecha: dateStr });
+    dayVersions[dateStr] = r.cancha ? (r.cancha.version || 0) : 0;
+    let cancha = {}, historial = [];
+    try{ cancha = r.cancha ? JSON.parse(r.cancha.value) : {}; }catch(e){}
+    try{ historial = r.historial ? JSON.parse(r.historial.value) : []; }catch(e){}
+    try{ state.heartbeat = r.heartbeat ? JSON.parse(r.heartbeat.value) : null; }catch(e){ state.heartbeat = null; }
+    return { cancha, historial };
+  }catch(e){
+    if(e && e.noAuth) throw e;
+    return { cancha: await loadCourtBookings(dateStr), historial: await loadHistory(dateStr) };
+  }
+}
+async function loadHistory(dateStr){
+  try{
+    const res = await window.storage.get(`historial:${dateStr}`, true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveCourtBookings(dateStr, data){
+  if(!window.storage) throw new Error('Almacenamiento no disponible');
+  const v = (dateStr in dayVersions) ? dayVersions[dateStr] : 0;
+  const r = await window.storage.set(`cancha:${dateStr}`, JSON.stringify(data), true, v);
+  if(r && typeof r.version === 'number') dayVersions[dateStr] = r.version;
+}
+/* Si la escritura chocó con la de otra persona (409): avisar, recargar el día y cerrar el formulario. */
+async function manejarConflicto(e, dateStr){
+  if(!(e && e.conflicto)) return false;
+  showToast('Otra persona modificó este día hace un momento. Se actualizó; revisa e intenta de nuevo.');
+  try{ state.courtBookings = await loadCourtBookings(dateStr); }catch(_){}
+  closeModal();
+  return true;
+}
+/* Índice para la app de videos + pedido para el worker, en una sola llamada. */
+async function indexarVideo(codigo, info, pedido){
+  if(!codigo) return;
+  const items = [
+    { key:`video:${codigo}`, value: JSON.stringify(info) },
+    { key:`pedido:${codigo}`, value: JSON.stringify(pedido) },
+  ];
+  for(let i=0;i<2;i++){
+    try{ await window.__api('mset', { items }); return; }
+    catch(e){
+      if(i===1){
+        console.warn('No se pudo indexar el código de video', e);
+        showToast('La reserva quedó guardada, pero el código de video no se registró. Edita la reserva y guarda para reintentar.');
+      }
+    }
+  }
+}
+async function borrarPedido(codigo){
+  try{ if(codigo && window.storage) await window.storage.delete(`pedido:${codigo}`, true); }
+  catch(e){ console.warn('No se pudo borrar el pedido de video', e); }
+}
+/* ---------- STORAGE: índice para la app de videos ----------
+   Cada reserva tiene un codigo_video. Guardamos una clave video:<codigo> que
+   apunta a los datos de esa reserva, para que la app de videos la resuelva con
+   una sola llamada (action:"get", key:"video:<codigo>"). Es best-effort: si
+   falla, la reserva ya quedó guardada y no se rompe nada. */
+async function saveVideoIndex(codigo, info){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.set(`video:${codigo}`, JSON.stringify(info), true);
+  }catch(e){ console.warn('No se pudo indexar el código de video', e); }
+}
+async function deleteVideoIndex(codigo){
+  try{
+    if(!codigo || !window.storage) return;
+    await window.storage.delete(`video:${codigo}`, true);
+  }catch(e){ console.warn('No se pudo borrar el índice de video', e); }
+}
+async function appendHistory(dateStr, event){
+  const hist = await loadHistory(dateStr);
+  hist.push(event);
+  if(!window.storage) throw new Error('Almacenamiento no disponible');
+  await window.storage.set(`historial:${dateStr}`, JSON.stringify(hist), true);
+  return hist;
+}
+
+/* ---------- STORAGE: directorio de clientes ---------- */
+async function loadClients(){
+  try{
+    const res = await window.storage.get('clientes-directorio', true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveClients(list){
+  try{
+    if(!window.storage) return;
+    await window.storage.set('clientes-directorio', JSON.stringify(list), true);
+  }catch(e){ console.warn('No se pudo guardar el directorio de clientes', e); }
+}
+async function upsertClient(nombre, apellido, phone, email){
+  if(!phone) return;
+  const list = await loadClients();
+  const idx = list.findIndex(c=>c.phone===phone);
+  const record = { nombre, apellido, phone, email };
+  if(idx>-1) list[idx] = record; else list.push(record);
+  await saveClients(list);
+  state.clients = list;
+}
+
+async function loadDateData(){
+  state.loading = true; render();
+  const dateStr = fmtDate(state.selectedDate);
+  const d = await cargarDia(dateStr);
+  state.courtBookings = d.cancha;
+  state.history = d.historial;
+  state.lastConfirmation = null;
+  state.loading = false;
+  render();
+}
+
+/* ---------- ACTUALIZACIÓN AUTOMÁTICA ENTRE EQUIPOS ---------- */
+var authTimer = null;
+function startAuthWatch(){
+  if(authTimer) return;
+  authTimer = setInterval(()=>{
+    if(state.appUnlocked && window.__authExpired && window.__authExpired()){
+      state.appUnlocked = false; state.isAdmin = false;
+      stopPolling(); clearSessionState();
+      if(window.__clearAppCode) window.__clearAppCode();
+      render();
+      showToast('Tu sesión expiró (10 h). Ingresa el código de acceso de nuevo.');
+    }
+  }, 60000);
+}
+function stopAuthWatch(){ if(authTimer){ clearInterval(authTimer); authTimer = null; } }
+function startPolling(){
+  if(pollTimer) return;
+  startAuthWatch();
+  pollTimer = setInterval(async ()=>{
+    if(!state.appUnlocked || state.modal || document.hidden) return; // no interrumpe formularios abiertos
+    if(state.tab === 'panel') return; // el Panel tiene sus propios formularios (fechas de métricas, login) que no deben resetearse solos
+    const dateStr = fmtDate(state.selectedDate);
+    let d;
+    try{ d = await cargarDia(dateStr); }catch(e){ return; }
+    if(fmtDate(state.selectedDate) !== dateStr || state.modal) return; // cambió de día o abrió un formulario mientras cargaba
+    state.courtBookings = d.cancha;
+    state.history = d.historial;
+    render();
+  }, POLL_INTERVAL_MS);
+}
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  stopAuthWatch();
+}
+async function manualRefresh(){
+  if(state.modal) return;
+  await loadDateData();
+  showToast('Actualizado.');
+}
+
+/* ---------- ACCIONES: navegación ---------- */
+async function selectDate(d){ state.selectedDate = d; await loadDateData(); }
+function selectTab(tab){
+  if(tab === 'premios'){ window.location.href = '/premiosreactivacion.html'; return; }
+  state.tab = tab; render();
+}
+async function openSlotModal(time, court){
+  state.modal = { type:'court-flow', time, court };
+  resetBookingFlow();
+  render();
+  state.clients = await loadClients();
+}
+function openEditModal(entry){
+  if((entry.bookingType||'cancha')==='bloqueo'){
+    state.modal = { type:'edit-block', groupId:entry.groupId, court:entry.court, startTime:entry.startTime, endTime:entry.endTime, prefillTitle:entry.title };
+  } else {
+    state.modal = {
+      type:'edit', groupId:entry.groupId, bookingType: entry.bookingType || 'cancha',
+      court:entry.court, startTime:entry.startTime, endTime:entry.endTime,
+      trainer:entry.trainer, players:entry.players,
+      prefillName:entry.name, prefillPhone:entry.phone, prefillEmail:entry.email,
+      prefillComment:entry.comment, prefillCourtesy:entry.courtesy,
+      prefillPrice:entry.price, prefillPayments:Array.isArray(entry.payments)?entry.payments:[],
+    };
+  }
+  render();
+}
+function openBlockModal(){
+  state.modal = { type:'block' };
+  resetBlockForm();
+  render();
+}
+function closeModal(){ state.modal = null; render(); }
+
+/* ---------- ACCIÓN: reservar (unificada cancha/clase) ---------- */
+async function confirmSlotBooking(time, court, flow, name, phone, email, comment){
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  const idx = TIME_SLOTS.indexOf(time);
+  const slotsNeeded = [];
+  for(let i=0;i<flow.duration;i++){
+    if(idx+i >= TIME_SLOTS.length) break;
+    slotsNeeded.push(TIME_SLOTS[idx+i]);
+  }
+  const conflict = slotsNeeded.some(t => latest[`${t}|${court}`]);
+  if(conflict || slotsNeeded.length===0){
+    showToast('Ese horario ya no está disponible. Elige otro.');
+    state.courtBookings = latest;
+    closeModal();
+    return;
+  }
+  const endTime = computeEndTime(time, flow.duration);
+
+  if(flow.bookingType==='clase'){
+    const overlap = Object.values(latest).some(b=>
+      b && (b.bookingType||'cancha')==='clase' && b.trainer===flow.trainer &&
+      !(b.endTime<=time || b.startTime>=endTime)
+    );
+    if(overlap){
+      showToast(`${flow.trainer} ya tiene una clase en ese horario.`);
+      closeModal();
+      return;
+    }
+  }
+
+  const groupId = `${dateStr}-${court}-${time}-${Date.now()}`;
+  const courtesy = flow.courtesy || 'none';
+  const listPrice = flow.bookingType==='cancha'
+    ? courtPriceForRange(time, flow.duration)
+    : classPriceForRange(flow.players, flow.duration);
+  const price = listPrice * discountFactor(courtesy);
+  const codigoVideo = nuevoCodigoVideo();
+  const bookingInfo = {
+    bookingType: flow.bookingType, name, phone, email, comment: comment||'', courtesy, ts:Date.now(), groupId,
+    startTime:time, endTime, court, price, listPrice,
+    payments: [], paidAmount: 0, pendingAmount: price, paymentStatus: price>0 ? 'pending' : 'paid',
+    codigo_video: codigoVideo,
+    trainer: flow.bookingType==='clase' ? flow.trainer : undefined,
+    players: flow.bookingType==='clase' ? flow.players : undefined,
+  };
+  slotsNeeded.forEach(t => { latest[`${t}|${court}`] = bookingInfo; });
+
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
+  // Índice inverso para la app de videos (video:<codigo>) y pedido para el
+  // worker del club (pedido:<codigo>, estado "programado"): el video se corta
+  // solo cuando termine el partido, sin esperar a que el cliente entre.
+  await indexarVideo(codigoVideo, {
+    codigo_video: codigoVideo, fecha: dateStr, court, startTime: time, endTime,
+    bookingType: flow.bookingType, groupId, name, phone,
+    trainer: bookingInfo.trainer, players: bookingInfo.players,
+  }, {
+    estado: 'programado', fecha: dateStr, court, startTime: time, endTime,
+    groupId, bookingType: flow.bookingType, ts: Date.now(), origen: 'manager',
+  });
+
+  state.courtBookings = latest;
+  const courtesyTxt = courtesy!=='none' ? ' (cortesía)' : '';
+  const detalle = flow.bookingType==='cancha'
+    ? `${court} · ${time}–${endTime} · ${formatCOP(price)}${courtesyTxt} (cliente: ${name})`
+    : `Clase con ${flow.trainer} · ${court} · ${time}–${endTime} · ${flow.players}p · ${formatCOP(price)}${courtesyTxt} (cliente: ${name})`;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:flow.bookingType, detalle, actor: state.staffName || name, source:'cliente' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+
+  let msg = flow.bookingType==='cancha'
+    ? buildCourtWhatsAppMessage(name, court, dateStr, time, endTime, codigoVideo)
+    : buildClaseWhatsAppMessage(name, flow.trainer, court, dateStr, time, endTime, flow.players, codigoVideo);
+  let premioTxt = '';
+  try { premioTxt = await bloquePremioGanado(phone, name); } catch(e){ /* best-effort: nunca rompe la reserva */ }
+  msg += premioTxt;
+  state.lastConfirmation = { phone, message: msg, email, groupId, estadoInvitacion: 'enviando' };
+  enviarConfirmacion('crear', {
+    groupId, fecha: dateStr, startTime: time, endTime, court, name, phone, email,
+    bookingType: flow.bookingType, trainer: bookingInfo.trainer,
+    players: bookingInfo.players, codigo_video: codigoVideo,
+    comment: comment || '', price, listPrice, courtesy,
+    duracionMin: flow.duration * 30, premio_texto: premioTxt
+  });
+  showToast(flow.bookingType==='cancha' ? `¡Reserva confirmada! ${court} · ${time}–${endTime} · Video: ${codigoVideo}` : `¡Clase confirmada con ${flow.trainer}! · Video: ${codigoVideo}`);
+  closeModal();
+}
+
+/* ---------- INVITACIÓN DE CALENDARIO + WHATSAPP ----------
+   Al confirmar / editar / cancelar una reserva llamamos a
+   /.netlify/functions/confirmacion, que manda por correo la invitación .ics
+   (Google Calendar, Apple Calendar, Outlook) y nos devuelve el texto ya listo
+   para WhatsApp con el enlace de calendario incluido.
+   Es best-effort: si falla, la reserva YA quedó guardada y no se rompe nada. */
+async function enviarConfirmacion(accion, reserva){
+  try{
+    const r = await fetch('/.netlify/functions/confirmacion', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: accion,
+        code:  window.__appCode  || '',
+        token: window.__appToken || '',
+        reserva: reserva
+      })
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+    if(accion === 'cancelar') return data;
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){
+      if(data.wa_text) c.message = data.wa_text;
+      c.gcal = data.gcal || null;
+      c.estadoInvitacion = (data.correo_enviado || data.repetido) ? 'enviado'
+                         : (data.aviso ? 'sin-correo' : 'error');
+      render();
+    }
+    return data;
+  }catch(e){
+    console.warn('No se pudo enviar la invitación de calendario', e);
+    const c = state.lastConfirmation;
+    if(c && c.groupId === reserva.groupId){ c.estadoInvitacion = 'error'; render(); }
+  }
+}
+function estadoInvitacionTexto(){
+  const c = state.lastConfirmation;
+  if(!c || !c.estadoInvitacion) return '';
+  if(c.estadoInvitacion === 'enviando')   return ' · enviando invitación…';
+  if(c.estadoInvitacion === 'enviado')    return ' · invitación enviada a ' + esc(c.email || '');
+  if(c.estadoInvitacion === 'sin-correo') return ' · sin correo: solo WhatsApp';
+  return ' · no se pudo enviar el correo';
+}
+
+/* Premio ganado (no avisado) para adjuntar a la confirmación — una sola vez. */
+async function bloquePremioGanado(phone, nombre){
+  if(!phone) return "";
+  const cli = String(phone).replace(/\D/g,"");
+  const r = await fetch("/.netlify/functions/loyalty", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.pendiente_aviso", code: window.__appCode || "", token: window.__appToken || "", cliente_id: cli })
+  });
+  if(!r.ok) return "";
+  const data = await r.json();
+  const premios = (data && data.premios) || [];
+  if(!premios.length) return "";
+  const p = premios[premios.length-1];
+  fetch("/.netlify/functions/loyalty", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ action:"premios.marcar_avisado", code: window.__appCode || "", token: window.__appToken || "", codigo_unico: p.codigo_unico }) });
+  const partes = String(p.mes).split("-").map(Number);
+  const ultimo = new Date(partes[0], partes[1], 0);
+  const venc = String(ultimo.getDate()).padStart(2,'0')+"/"+String(partes[1]).padStart(2,'0')+"/"+partes[0];
+  return "\n\n🎉 ¡Felicidades "+ (nombre||"") +"! Con tus reservas de este mes ganaste: "+ p.premio +
+         ".\nTu código de premio: "+ p.codigo_unico +
+         "\nMuéstralo en recepción para reclamarlo. Vence el "+ venc +".";
+}
+
+/* ---------- ACCIÓN: crear bloqueo recurrente ---------- */
+async function createRecurringBlock(title, court, startDateStr, startTime, durationSlots, recurrence, occurrences){
+  const staff = state.staffName || 'Staff';
+  const intervalDays = recurrence==='weekly' ? 7 : recurrence==='daily' ? 1 : null;
+  const count = recurrence==='once' ? 1 : Math.max(1, occurrences);
+  const seriesId = `serie-${Date.now()}`;
+  const courtsToBlock = court==='__all__' ? COURTS : [court];
+  const [sy,sm,sd] = startDateStr.split('-').map(Number);
+  const baseDate = new Date(sy, sm-1, sd);
+
+  let created = 0;
+  const skippedDates = [];
+
+  for(let i=0;i<count;i++){
+    const occDate = new Date(baseDate);
+    if(intervalDays) occDate.setDate(occDate.getDate() + i*intervalDays);
+    const dateStr = fmtDate(occDate);
+    const latest = await loadCourtBookings(dateStr);
+    const idx = TIME_SLOTS.indexOf(startTime);
+    const slotsNeeded = [];
+    for(let k=0;k<durationSlots;k++){
+      if(idx+k>=TIME_SLOTS.length) break;
+      slotsNeeded.push(TIME_SLOTS[idx+k]);
+    }
+    let anyConflict = slotsNeeded.length===0;
+    courtsToBlock.forEach(c=>{
+      slotsNeeded.forEach(t=>{ if(latest[`${t}|${c}`]) anyConflict = true; });
+    });
+    if(anyConflict){ skippedDates.push(dateStr); continue; }
+
+    const endTime = computeEndTime(startTime, durationSlots);
+    const groupIdBase = `${dateStr}-${startTime}-${Date.now()}-${i}`;
+    courtsToBlock.forEach(c=>{
+      const groupId = `${groupIdBase}-${c}`;
+      const info = {
+        bookingType:'bloqueo', title, name:staff, ts:Date.now(), groupId,
+        startTime, endTime, court:c, price:0,
+        seriesId, seriesMeta:{ startDate:startDateStr, intervalDays, occurrences:count },
+      };
+      slotsNeeded.forEach(t=>{ latest[`${t}|${c}`] = info; });
+    });
+
+    try{
+      await saveCourtBookings(dateStr, latest);
+      created++;
+      try{
+        await appendHistory(dateStr, { ts:Date.now(), action:'creada', tipo:'bloqueo', detalle:`${title} · ${courtsToBlock.join(', ')} · ${startTime}–${endTime}`, actor:staff, source:'panel' });
+      }catch(e){ console.warn('historial', e); }
+    }catch(e){
+      skippedDates.push(dateStr);
+    }
+  }
+  return { created, skippedDates };
+}
+async function cancelSeries(seriesId, seriesMeta){
+  const staff = state.staffName || 'Staff';
+  const intervalDays = seriesMeta.intervalDays;
+  const count = seriesMeta.occurrences;
+  const [sy,sm,sd] = seriesMeta.startDate.split('-').map(Number);
+  const baseDate = new Date(sy, sm-1, sd);
+  let removed = 0;
+  for(let i=0;i<count;i++){
+    const occDate = new Date(baseDate);
+    if(intervalDays) occDate.setDate(occDate.getDate()+i*intervalDays);
+    const dateStr = fmtDate(occDate);
+    const latest = await loadCourtBookings(dateStr);
+    let touched = false;
+    Object.keys(latest).forEach(key=>{
+      if(latest[key] && latest[key].seriesId===seriesId){ delete latest[key]; touched=true; }
+    });
+    if(touched){
+      try{
+        await saveCourtBookings(dateStr, latest);
+        removed++;
+        try{ await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'bloqueo', detalle:'Bloqueo recurrente cancelado (serie completa)', actor:staff, source:'panel' }); }catch(e){}
+      }catch(e){ /* se ignora ese día puntual */ }
+    }
+  }
+  return removed;
+}
+
+/* ---------- ACCIONES: editar / cancelar (panel) ---------- */
+function labelForBooking(b){
+  const type = b.bookingType || 'cancha';
+  if(type==='cancha') return b.court;
+  if(type==='clase') return `Clase con ${b.trainer}`;
+  return `Bloqueo "${b.title}"`;
+}
+async function addBookingPayment(groupId, method, amount, comment){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  const ref = Object.values(latest).find(b=>b && b.groupId===groupId);
+  if(!ref) throw new Error('No encontramos la reserva.');
+  if(!bookingHasEnded(ref, dateStr)) throw new Error('El pago se registra después de terminar la reserva.');
+  const summary = paymentSummary(ref);
+  const monto = Math.round(Number(amount)||0);
+  if(!method || !PAYMENT_METHODS.includes(method)) throw new Error('Selecciona una forma de pago.');
+  if(monto <= 0) throw new Error('Ingresa un monto válido.');
+  if(monto > summary.pending + 0.5) throw new Error('El monto supera el saldo pendiente.');
+  const payment = { id:'pay-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6), method, amount:monto, comment:comment||'', ts:Date.now(), actor:staff };
+  const nextPayments = summary.payments.concat([payment]);
+  const nextPaid = nextPayments.reduce((a,p)=>a+(Number(p.amount)||0),0);
+  const total = Math.max(0,Number(ref.price)||0);
+  const pending = Math.max(0,total-nextPaid);
+  const status = total===0 || pending<1 ? 'paid' : nextPaid>0 ? 'partial' : 'pending';
+  Object.keys(latest).forEach(key=>{
+    const b=latest[key];
+    if(b && b.groupId===groupId) latest[key]={...b,payments:nextPayments,paidAmount:nextPaid,pendingAmount:pending,paymentStatus:status};
+  });
+  await saveCourtBookings(dateStr, latest);
+  state.courtBookings=latest;
+  try{ state.history=await appendHistory(dateStr,{ts:Date.now(),action:'modificada',tipo:'pago',detalle:`${method} · ${formatCOP(monto)} · ${ref.name} · saldo ${formatCOP(pending)}${comment?' · '+comment:''}`,actor:staff,source:'panel'}); }catch(e){}
+  state.modal = {...state.modal,prefillPayments:nextPayments,prefillPrice:total};
+  updateModalDOM();
+  showToast(pending<1 ? 'Pago completo registrado.' : 'Pago parcial registrado. Saldo: '+formatCOP(pending));
+}
+async function deleteBookingPayment(groupId, paymentId){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  const ref = Object.values(latest).find(b=>b && b.groupId===groupId);
+  if(!ref) throw new Error('No encontramos la reserva.');
+  const before = paymentSummary(ref).payments;
+  const removed = before.find(p=>p.id===paymentId);
+  if(!removed) throw new Error('No encontramos ese pago.');
+  const nextPayments = before.filter(p=>p.id!==paymentId);
+  const nextPaid = nextPayments.reduce((a,p)=>a+(Number(p.amount)||0),0);
+  const total = Math.max(0,Number(ref.price)||0);
+  const pending = Math.max(0,total-nextPaid);
+  const status = total===0 || pending<1 ? 'paid' : nextPaid>0 ? 'partial' : 'pending';
+  Object.keys(latest).forEach(key=>{
+    const b=latest[key];
+    if(b && b.groupId===groupId) latest[key]={...b,payments:nextPayments,paidAmount:nextPaid,pendingAmount:pending,paymentStatus:status};
+  });
+  await saveCourtBookings(dateStr, latest);
+  state.courtBookings=latest;
+  try{ state.history=await appendHistory(dateStr,{ts:Date.now(),action:'modificada',tipo:'pago',detalle:`Pago eliminado · ${removed.method} · ${formatCOP(removed.amount)} · ${ref.name}`,actor:staff,source:'panel'}); }catch(e){}
+  state.modal={...state.modal,prefillPayments:nextPayments,prefillPrice:total};
+  updateModalDOM();
+  showToast('Pago eliminado.');
+}
+
+async function editBooking(groupId, newName, newPhone, newEmail, newComment, newCourtesy){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  let ref = null;
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId===groupId){
+      const listPrice = b.listPrice!==undefined ? b.listPrice : b.price;
+      const newPrice = listPrice * discountFactor(newCourtesy);
+      if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime}: ${b.name} → ${newName}`;
+      const ps = paymentSummary(b);
+      const pendingAmount = Math.max(0, newPrice - ps.paid);
+      const paymentStatus = newPrice===0 || pendingAmount<1 ? 'paid' : ps.paid>0 ? 'partial' : 'pending';
+      latest[key] = { ...b, name:newName, phone:newPhone, email:newEmail, comment:newComment, courtesy:newCourtesy, listPrice, price:newPrice, paidAmount:ps.paid, pendingAmount, paymentStatus };
+      ref = latest[key];
+    }
+  });
+
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
+  // Mantener sincronizado el índice de la app de videos con los nuevos datos.
+  if(ref && ref.codigo_video){
+    await saveVideoIndex(ref.codigo_video, {
+      codigo_video: ref.codigo_video, fecha: dateStr, court: ref.court,
+      startTime: ref.startTime, endTime: ref.endTime, bookingType: ref.bookingType,
+      groupId: ref.groupId, name: ref.name, phone: ref.phone,
+      trainer: ref.trainer, players: ref.players,
+    });
+  }
+
+  state.courtBookings = latest;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'reserva', detalle, actor:staff, source:'panel' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  if(ref) enviarConfirmacion('actualizar', Object.assign({}, ref, { fecha: dateStr }));
+  showToast('Reserva actualizada.');
+  closeModal();
+}
+async function editBlockTitle(groupId, newTitle){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId===groupId){
+      if(!detalle) detalle = `Bloqueo "${b.title}" → "${newTitle}"`;
+      latest[key] = { ...b, title:newTitle };
+    }
+  });
+
+  try{ await saveCourtBookings(dateStr, latest); }
+  catch(e){ if(await manejarConflicto(e, dateStr)) return; throw e; }
+
+  state.courtBookings = latest;
+  try{
+    state.history = await appendHistory(dateStr, { ts:Date.now(), action:'modificada', tipo:'bloqueo', detalle, actor:staff, source:'panel' });
+  }catch(e){ console.warn('No se pudo registrar el historial', e); }
+  showToast('Bloqueo actualizado.');
+  closeModal();
+}
+async function cancelGroup(groupId){
+  const staff = state.staffName || 'Staff';
+  const dateStr = fmtDate(state.selectedDate);
+  const latest = await loadCourtBookings(dateStr);
+  let detalle = '';
+  const codigosVideo = new Set();
+  let refCancel = null;
+  Object.keys(latest).forEach(key=>{
+    const b = latest[key];
+    if(b && b.groupId === groupId){
+      if(!detalle) detalle = `${labelForBooking(b)} · ${b.startTime}–${b.endTime} (${b.name})`;
+      if(b.codigo_video) codigosVideo.add(b.codigo_video);
+      if(!refCancel) refCancel = Object.assign({}, b, { fecha: dateStr });
+      delete latest[key];
+    }
+  });
+  try{
+    await saveCourtBookings(dateStr, latest);
+    for(const cv of codigosVideo){ await deleteVideoIndex(cv); await borrarPedido(cv); }
+    state.courtBookings = latest;
+    try{
+      state.history = await appendHistory(dateStr, { ts:Date.now(), action:'cancelada', tipo:'reserva', detalle, actor:staff, source:'panel' });
+    }catch(e){ console.warn('No se pudo registrar el historial', e); }
+    if(refCancel) enviarConfirmacion('cancelar', refCancel);
+    showToast('Reserva cancelada.');
+  }catch(e){
+    if(await manejarConflicto(e, dateStr)) return;
+    showToast('No se pudo cancelar. Intenta de nuevo.');
+  }
+  render();
+}
+/* ---------- SESIÓN: sobrevivir a recargas de la página ----------
+   No podemos usar localStorage/sessionStorage (prohibido en artefactos de Claude),
+   así que usamos el almacenamiento propio de Claude en modo "personal" (shared:false).
+   Si el navegador recarga la página, esto evita tener que reescribir los códigos
+   cada vez. No hay garantía absoluta de que persista siempre (depende de cómo
+   Claude relacione el almacenamiento personal con tu sesión/navegador), pero
+   como mucho no hace nada — nunca empeora lo que ya había. */
+async function saveSessionState(){
+  try{
+    if(!window.storage) return;
+    await window.storage.set('session-state', JSON.stringify({
+      appUnlocked: state.appUnlocked, staffName: state.staffName
+    }), false);
+  }catch(e){ /* no es crítico si falla */ }
+}
+async function trySessionRestore(){
+  try{
+    if(window.__authExpired && window.__authExpired()){
+      if(window.__clearAppCode) window.__clearAppCode();
+      try{ await clearSessionState(); }catch(e){}
+      return;   // pasaron >10 h: forzar el candado, se vuelve a pedir el código
+    }
+    const res = await window.storage.get('session-state', false);
+    if(!res) return;
+    const data = JSON.parse(res.value);
+    if(data.appUnlocked) state.appUnlocked = true;
+    if(data.staffName) state.staffName = data.staffName;
+      state.isAdmin = await verificarAdmin();
+  }catch(e){ /* no había sesión guardada */ }
+}
+async function clearSessionState(){
+  try{ if(window.storage) await window.storage.delete('session-state', false); }catch(e){}
+}
+
+async function tryAdminLogin(pin, name){
+  const btn = document.getElementById('pinSubmit');
+  const original = btn ? btn.textContent : 'Entrar';
+  if(btn){ btn.disabled = true; btn.textContent = 'Comprobando…'; }
+  try{
+    const r = await window.__api('admin.login', { pin: String(pin || '').trim() });
+    if(!r || !r.ok) throw new Error('PIN incorrecto.');
+    window.__setAdminToken(r.adminToken || null);
+    state.isAdmin = true;
+    state.staffName = name || 'Staff';
+    await saveSessionState();
+    if(!r.adminToken) showToast('Panel abierto. Sin SESSION_SECRET habrá que repetir el PIN al recargar.');
+    render();
+  }catch(err){
+    if(btn){ btn.disabled = false; btn.textContent = original; }
+    const m = (err && err.message) || '';
+    if(err && err.noAuth)      showToast('Tu sesión expiró. Vuelve a entrar con el código de acceso.');
+    else if(m.indexOf('403') > -1) showToast('PIN incorrecto.');
+    else                       showToast(m || 'No se pudo comprobar el PIN.');
+  }
+}
+
+/* ¿La sesión de Panel guardada sigue siendo válida? Lo decide el servidor.
+   Sin confirmación NO se abre el Panel: nunca elevamos privilegios por lo que
+   diga el navegador. */
+async function verificarAdmin(){
+  if(!window.__adminToken) return false;
+  try{
+    const r = await window.__api('admin.verify', { adminToken: window.__adminToken });
+    if(r && r.ok) return true;
+    window.__setAdminToken(null);
+    return false;
+  }catch(e){
+    if(e && e.noAuth) window.__setAdminToken(null);
+    return false;
+  }
+}
+
+/* ---------- RENDER: CANDADO DE LA APP ---------- */
+function renderLockScreen(){
+  document.getElementById('tabsNav').innerHTML = '';
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="admin-login" style="margin-top:60px;">
+      <h2 class="section-title">Acceso privado</h2>
+      <p>Esta app es de uso interno de Bahía Padel. Ingresa tu nombre de usuario y el código de acceso para continuar.</p>
+      <div class="field"><input type="text" id="appUserInput" placeholder="Usuario (tu nombre)"></div>
+      <div class="field"><input type="password" id="appCodeInput" placeholder="Código de acceso"></div>
+      <button class="btn-confirm" id="appCodeSubmit">Entrar</button>
+    </div>
+  `;
+  const bannerWrap = document.getElementById('waBannerWrap');
+  if(bannerWrap) bannerWrap.innerHTML = '';
+  const submit = document.getElementById('appCodeSubmit');
+  const userInput = document.getElementById('appUserInput');
+  const input = document.getElementById('appCodeInput');
+  const tryUnlock = async ()=>{
+    const intento = (input.value || '').trim();
+    if(!intento){ showToast('Escribe el código.'); return; }
+    if(submit){ submit.disabled = true; submit.textContent = 'Comprobando…'; }
+    try{
+      window.__setAppCode(intento);
+      await window.__api('auth', {});
+      // Si el servidor tiene SESSION_SECRET, cambiamos el código por un token
+      // con caducidad. Si no, seguimos con el código como hasta ahora.
+      try{
+        const ses = await window.__api('login', {});
+        if(ses && ses.token){ window.__useSession(ses.token); }
+      }catch(e){ /* sin token: se sigue usando el código */ }
+    }catch(err){
+      window.__clearAppCode();
+      showToast(err && err.noAuth ? 'Código incorrecto.' : ('No se pudo conectar. ' + (err.message||'')));
+      if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
+      return;
+    }
+    if(submit){ submit.disabled = false; submit.textContent = 'Entrar'; }
+    state.appUnlocked = true;
+    window.__setLoginAt();   // inicia el reloj de 10 h al ingresar el código
+    state.staffName = userInput.value.trim() || 'Usuario';
+    await saveSessionState();
+    state.clients = await loadClients();
+    render();
+    await loadDateData();
+    startPolling();
+  };
+  if(submit) submit.addEventListener('click', tryUnlock);
+  if(input) input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+  if(userInput) userInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+}
+
+/* ---------- RENDER: NAV ---------- */
+function renderNav(){
+  const nav = document.getElementById('tabsNav');
+  const tabs = [ ['cancha','Cancha'], ['clases','Clases'], ['panel','Panel'], ['premios','Premiaciones'] ];
+  nav.innerHTML = tabs.map(([id,label]) =>
+    `<button class="tab-btn ${state.tab===id?'active':''}" data-tab="${id}">${label}</button>`
+  ).join('') + `<button class="tab-btn lock-btn" id="lockAppBtn" title="Bloquear la app en este equipo" aria-label="Bloquear la app en este equipo">${ic('lock')}</button>`;
+  nav.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
+    btn.addEventListener('click', ()=> selectTab(btn.dataset.tab));
+  });
+  const lockBtn = document.getElementById('lockAppBtn');
+  if(lockBtn) lockBtn.addEventListener('click', ()=>{
+    state.appUnlocked = false;
+    state.isAdmin = false;
+    stopPolling();
+    clearSessionState();
+    if(window.__clearAppCode) window.__clearAppCode();
+    render();
+  });
+}
+
+/* ---------- RENDER: DATE PILLS ---------- */
+function renderDatePills(){
+  const sel = state.selectedDate;
+  const hoyEnLaTira = state.dates.some(d => sameDay(d, new Date()));
+  return `
+  <div class="date-nav">
+    <button class="date-nav-btn" id="dateBack" title="Retrocede 14 días">◀ Antes</button>
+    <label class="date-nav-jump" for="dateJump">Ir a
+      <input type="date" id="dateJump" value="${fmtDate(sel)}">
+    </label>
+    <button class="date-nav-btn" id="dateFwd" title="Avanza 14 días">Después ▶</button>
+    <button class="date-nav-btn${hoyEnLaTira ? '' : ' alert'}" id="dateToday" title="Volver a la ventana por defecto">Hoy</button>
+    <span class="date-nav-label">${esc(etiquetaMes(sel))}</span>
+  </div>
+  <div class="date-row" id="dateRow">
+    ${state.dates.map((d,i)=>`
+      <button class="date-pill ${sameDay(d,sel)?'active':''} ${esFechaPasada(d)?'past':''}" data-idx="${i}" title="${fmtDate(d)}">
+        <span class="dow">${DOW_LABELS[d.getDay()]}</span>
+        <span class="dnum">${d.getDate()}</span>
+      </button>
+    `).join('')}
+  </div>`;
+}
+function bindDatePills(){
+  document.querySelectorAll('.date-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=> selectDate(state.dates[Number(btn.dataset.idx)]));
+  });
+  const back = document.getElementById('dateBack');
+  if(back) back.addEventListener('click', ()=> shiftDateWindow(-14));
+  const fwd = document.getElementById('dateFwd');
+  if(fwd) fwd.addEventListener('click', ()=> shiftDateWindow(14));
+  const hoy = document.getElementById('dateToday');
+  if(hoy) hoy.addEventListener('click', resetDateWindow);
+  const jump = document.getElementById('dateJump');
+  if(jump) jump.addEventListener('change', ()=> goToDate(jump.value));
+}
+
+/* ---------- RENDER: CANCHA TAB ---------- */
+function renderCanchaTab(){
+  const rows = TIME_SLOTS.map(time => `
+    <div class="court-row">
+      <div class="time-cell">${time}</div>
+      ${COURTS.map(court => {
+        const key = `${time}|${court}`;
+        const booking = state.courtBookings[key];
+        if(booking){
+          const type = booking.bookingType || 'cancha';
+          let icon, extraClass, label;
+          if(type==='cancha'){ icon=ic('ball'); extraClass=''; label = booking.name; }
+          else if(type==='clase'){ icon=ic('user'); extraClass=' slot-class'; label = booking.name; }
+          else { icon=ic('ban'); extraClass=' slot-block'; label = booking.title || 'Bloqueo'; }
+          const titleAttr = (type==='bloqueo' ? booking.title : booking.name) + (booking.comment ? ' — ' + booking.comment : '');
+          if(booking.startTime===time){
+            return `<div class="slot-cell"><div class="slot-taken${extraClass}" title="${esc(titleAttr)}">${icon} ${esc(label)}</div></div>`;
+          }
+          return `<div class="slot-cell"><div class="slot-taken slot-taken-continue${extraClass}"></div></div>`;
+        }
+        if(isPastSlot(time)){
+          return `<div class="slot-cell"><div class="slot-past" title="Ya pasó">${ic('clock')}</div></div>`;
+        }
+        return `<div class="slot-cell"><button class="slot-btn" data-time="${time}" data-court="${esc(court)}">Libre · $${priceShortLabel(courtSlotPrice(time)*2)}/h</button></div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Reservar</h2>
+        <p class="section-sub">Elige un horario libre y reserva cancha o clase con entrenador · pago en sitio.</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
+    </div>
+    <div class="legend">
+      <span><span class="dot free"></span>Libre</span>
+      <span><span class="dot occ"></span>Cancha ocupada</span>
+      <span><span class="dot class"></span>Clase con entrenador</span>
+      <span><span class="dot block"></span>Bloqueada</span>
+      <span><span class="dot past"></span>Ya pasó</span>
+    </div>
+    ${renderDatePills()}
+    <div class="court-scroll">
+      <div class="court-grid" style="--ncourts:${COURTS.length}">
+        <div class="court-head-row">
+          <div class="time-cell" style="border-right:1px solid var(--line);"></div>
+          ${COURTS.map(c=>{
+            const pct = courtOccupancyPercent(c);
+            return `<div class="court-head-cell">
+              <span class="cname">${esc(c)}</span>
+              <span class="occ-badge ${occBadgeClass(pct)}">${pct}% ocupada</span>
+            </div>`;
+          }).join('')}
+        </div>
+        ${rows}
+      </div>
+    </div>
+  `;
+}
+function bindCanchaTab(){
+  document.querySelectorAll('.slot-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openSlotModal(btn.dataset.time, btn.dataset.court));
+  });
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+}
+
+/* ---------- RENDER: CLASES TAB (solo consulta, agenda de entrenadores) ---------- */
+function renderClasesTab(){
+  const dateStr = fmtDate(state.selectedDate);
+  const seenGroups = new Set();
+  const allClasses = [];
+  Object.values(state.courtBookings).forEach(b=>{
+    if(!b || (b.bookingType||'cancha')!=='clase') return;
+    if(seenGroups.has(b.groupId)) return;
+    seenGroups.add(b.groupId);
+    allClasses.push(b);
+  });
+  allClasses.sort((a,b)=> a.startTime.localeCompare(b.startTime));
+  const filtered = state.trainerFilter==='todos' ? allClasses : allClasses.filter(c=>c.trainer===state.trainerFilter);
+
+  const listHtml = filtered.length===0
+    ? `<div class="empty-note">Sin clases programadas ${state.trainerFilter==='todos'?'':'para '+esc(state.trainerFilter)+' '}el ${dateStr}.</div>`
+    : filtered.map(c=>`
+      <div class="class-row">
+        <div class="class-row-time">${c.startTime}–${c.endTime}</div>
+        <div class="class-row-info">
+          <div class="who">${esc(c.trainer)} <span class="type-tag clase">Clase</span></div>
+          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · Nota: '+esc(c.comment) : ''} · Pago: ${esc(paymentStatusText(c))}</div>
+        </div>
+        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    `).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Clases del día</h2>
+        <p class="section-sub">Vista de consulta para entrenadores. La programación se hace desde la pestaña Cancha.</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
+    </div>
+    ${renderDatePills()}
+    <div class="duration-options" style="margin-bottom:18px;">
+      <button class="dur-pill ${state.trainerFilter==='todos'?'active':''}" data-trainer-filter="todos">Todos</button>
+      ${TRAINERS.map(t=>`<button class="dur-pill ${state.trainerFilter===t?'active':''}" data-trainer-filter="${esc(t)}">${esc(t)}</button>`).join('')}
+    </div>
+    ${listHtml}
+  `;
+}
+function bindClasesTab(){
+  document.querySelectorAll('[data-trainer-filter]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.trainerFilter = btn.dataset.trainerFilter;
+      render();
+    });
+  });
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+}
+
+/* ---------- RENDER: PANEL (ADMIN) ---------- */
+function renderHistory(){
+  const items = [...state.history].sort((a,b)=>b.ts-a.ts);
+  if(items.length===0) return `<p class="empty-note">Sin movimientos registrados este día.</p>`;
+  return items.map(h=>{
+    const time = new Date(h.ts).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit', hour12:false});
+    const badgeClass = h.action==='creada' ? 'badge-teal' : h.action==='cancelada' ? 'badge-coral' : 'badge-amber';
+    const actionLabel = h.action==='creada'?'Creada':h.action==='cancelada'?'Cancelada':'Modificada';
+    return `<div class="history-item">
+      <span class="history-time">${time}</span>
+      <span class="history-badge ${badgeClass}">${actionLabel}</span>
+      <span class="history-detail">${esc(h.detalle||'')}</span>
+      <span class="history-actor">${esc(h.actor)} · ${h.source==='cliente'?'cliente':'staff'}</span>
+    </div>`;
+  }).join('');
+}
+function renderPanelTab(){
+  if(!state.isAdmin){
+    return `
+      <div class="admin-login">
+        <h2 class="section-title">Panel</h2>
+        <p>Ingresa tu nombre y el PIN para entrar. Tu nombre queda registrado en el historial.</p>
+        <div class="field"><input type="text" id="staffNameInput" placeholder="Tu nombre" value="${esc(state.staffName||'')}"></div>
+        <div class="field"><input type="password" id="pinInput" placeholder="PIN" inputmode="numeric"></div>
+        <button class="btn-confirm" id="pinSubmit">Entrar</button>
+      </div>
+    `;
+  }
+  const dateStr = fmtDate(state.selectedDate);
+  const seenGroups = new Set();
+  const entries = [];
+  Object.values(state.courtBookings).forEach(b=>{
+    if(!b || seenGroups.has(b.groupId)) return;
+    seenGroups.add(b.groupId);
+    entries.push(b);
+  });
+  entries.sort((a,b)=> a.startTime.localeCompare(b.startTime));
+  window.__adminAll = entries;
+  const payableEntries = entries.filter(e=>(e.bookingType||'cancha')!=='bloqueo');
+  const totalRevenue = payableEntries.reduce((sum,e)=> sum + (Number(e.price)||0), 0);
+  const totalPaid = payableEntries.reduce((sum,e)=> sum + paymentSummary(e).paid, 0);
+  const totalPending = payableEntries.reduce((sum,e)=> sum + paymentSummary(e).pending, 0);
+
+  const listHtml = entries.length===0
+    ? `<div class="empty-note">Sin reservas para el ${dateStr}.</div>`
+    : entries.map((e,i)=>{
+        const type = e.bookingType || 'cancha';
+        let label, metaLine, waButton = '';
+        if(type==='cancha'){
+          label = `${e.court} · ${e.startTime}–${e.endTime}`;
+          metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildCourtWhatsAppMessage(e.name, e.court, dateStr, e.startTime, e.endTime, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
+        } else if(type==='clase'){
+          label = `Clase con ${e.trainer} · ${e.court} · ${e.startTime}–${e.endTime} · ${e.players}p`;
+          metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
+          waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildClaseWhatsAppMessage(e.name, e.trainer, e.court, dateStr, e.startTime, e.endTime, e.players, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
+        } else {
+          label = `${e.court} · ${e.startTime}–${e.endTime}`;
+          metaLine = `${esc(label)} · Bloqueado por ${esc(e.name)}`;
+        }
+        if(e.comment){ metaLine += ` · Nota: ${esc(e.comment)}`; }
+        const courtesyTag = (e.courtesy && e.courtesy!=='none')
+          ? `<span class="type-tag courtesy">${e.courtesy==='full'?'Cortesía completa':'Cortesía 1/4'}</span>` : '';
+        const ps = paymentSummary(e);
+        const paymentTag = type==='bloqueo' ? '' : `<span class="payment-mini ${ps.status}">${ps.status==='paid'?'Pagado':ps.status==='partial'?'Parcial · '+formatCOP(ps.pending)+' pendiente':'Pendiente · '+formatCOP(ps.pending)}</span>`;
+        const canPay = type!=='bloqueo' && bookingHasEnded(e,dateStr) && ps.pending>0;
+        const payButton = canPay ? `<button class="pay-link" data-admin-pay-idx="${i}">Cobrar</button>` : '';
+        const seriesButton = (type==='bloqueo' && e.seriesMeta && e.seriesMeta.intervalDays)
+          ? `<button class="cancel-link" data-admin-series-idx="${i}">Cancelar serie</button>` : '';
+        return `
+        <div class="admin-list-item">
+          <div>
+            <div class="who">${type==='bloqueo' ? esc(e.title) : esc(e.name)} <span class="type-tag ${type}">${type==='cancha'?'Cancha':type==='clase'?'Clase':'Bloqueo'}</span>${courtesyTag}${paymentTag}</div>
+            <div class="meta">${metaLine}</div>
+          </div>
+          <div class="admin-actions">
+            ${waButton}
+            ${payButton}
+            <button class="edit-link" data-admin-idx="${i}">Editar</button>
+            <button class="cancel-link" data-admin-cancel-idx="${i}">Cancelar</button>
+            ${seriesButton}
+          </div>
+        </div>`;
+      }).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Panel de reservas</h2>
+        <p class="section-sub">Sesión: ${esc(state.staffName)} · Total: ${formatCOP(totalRevenue)} · Pagado: ${formatCOP(totalPaid)} · Por cobrar: ${formatCOP(totalPending)}</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">${ic('refresh')} Actualizar</button>
+    </div>
+    ${(g=>`<p class="hb-line ${g.nivel}"><i></i><b>${esc(g.texto)}</b>&nbsp;· ${esc(g.detalle)}</p>`)(estadoGrabacion())}
+    ${renderDatePills()}
+    <button class="block-open-btn" id="openBlockBtn">+ Crear bloqueo recurrente</button>
+
+    <div class="panel-subhead">Métricas y reportes</div>
+    <div class="metrics-box">
+      <div class="metrics-dates">
+        <div class="field"><label for="metricsStart">Desde</label><input type="date" id="metricsStart" value="${metricsRange.start || dateStr}"></div>
+        <div class="field"><label for="metricsEnd">Hasta</label><input type="date" id="metricsEnd" value="${metricsRange.end || dateStr}"></div>
+      </div>
+      <div class="metrics-buttons">
+        <button id="exportTomasBtn">⬇ Clases de Tomás (CSV)</button>
+        <button id="exportIsaiasBtn">⬇ Clases de Isaías (CSV)</button>
+        <button id="exportCanchaBtn">⬇ Reservas de cancha (CSV)</button>
+      </div>
+    </div>
+
+    <div class="panel-subhead">Reservas del día</div>
+    ${listHtml}
+    <div class="panel-subhead">Historial de movimientos</div>
+    ${renderHistory()}
+  `;
+}
+function bindPanelTab(){
+  if(!state.isAdmin){
+    const submit = document.getElementById('pinSubmit');
+    const pinInput = document.getElementById('pinInput');
+    const nameInput = document.getElementById('staffNameInput');
+    if(submit) submit.addEventListener('click', ()=> tryAdminLogin(pinInput.value, nameInput.value.trim()));
+    if(pinInput) pinInput.addEventListener('keydown', e=>{ if(e.key==='Enter') tryAdminLogin(pinInput.value, nameInput.value.trim()); });
+    return;
+  }
+  const refreshBtn = document.getElementById('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', manualRefresh);
+  const openBlockBtn = document.getElementById('openBlockBtn');
+  if(openBlockBtn) openBlockBtn.addEventListener('click', openBlockModal);
+
+  document.querySelectorAll('[data-admin-idx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminIdx)];
+      openEditModal(e);
+    });
+  });
+  document.querySelectorAll('[data-admin-pay-idx]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const e=window.__adminAll[Number(btn.dataset.adminPayIdx)];
+      openEditModal(e);
+    });
+  });
+  document.querySelectorAll('[data-admin-cancel-idx]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminCancelIdx)];
+      const ok = await confirmar('¿Cancelar esta reserva?', `${labelForBooking(e)} · ${e.startTime}–${e.endTime}${e.name ? ' · ' + e.name : ''}. Se avisará al cliente por correo si tiene uno.`, { ok:'Sí, cancelar', cancelar:'Volver' });
+      if(!ok) return;
+      cancelGroup(e.groupId);
+    });
+  });
+  document.querySelectorAll('[data-admin-series-idx]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const e = window.__adminAll[Number(btn.dataset.adminSeriesIdx)];
+      const ok = await confirmar('¿Cancelar toda la serie?', `Se quitará "${e.title}" de todas sus fechas (${e.seriesMeta.occurrences}).`, { ok:'Sí, cancelar la serie', cancelar:'Volver' });
+      if(!ok) return;
+      const removed = await cancelSeries(e.seriesId, e.seriesMeta);
+      showToast(`Serie cancelada en ${removed} fecha(s).`);
+      await loadDateData();
+    });
+  });
+
+  const metricsStart = document.getElementById('metricsStart');
+  const metricsEnd = document.getElementById('metricsEnd');
+  if(metricsStart) metricsStart.addEventListener('change', ()=>{ metricsRange.start = metricsStart.value; });
+  if(metricsEnd) metricsEnd.addEventListener('change', ()=>{ metricsRange.end = metricsEnd.value; });
+  function getRange(){
+    if(!metricsStart || !metricsEnd) return null;
+    const s = metricsStart.value, e = metricsEnd.value;
+    if(!s || !e){ showToast('Elige fecha de inicio y de fin.'); return null; }
+    if(s > e){ showToast('La fecha de inicio debe ser antes de la fecha fin.'); return null; }
+    const days = (new Date(e) - new Date(s)) / 86400000;
+    if(days > 366){ showToast('El rango es muy amplio (máximo 1 año).'); return null; }
+    return { s, e };
+  }
+  async function runExport(filterFn, columns, filenamePrefix, btn){
+    const r = getRange();
+    if(!r) return;
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Generando…';
+    try{
+      const rows = await gatherRangeEntries(r.s, r.e, filterFn);
+      downloadCSV(`${filenamePrefix}-${r.s}_a_${r.e}.csv`, toCSV(rows, columns));
+      showToast(`Se descargaron ${rows.length} registro(s).`);
+    }catch(e){
+      showToast('No se pudo generar el archivo.');
+    }
+    btn.disabled = false; btn.textContent = original;
+  }
+  const exportTomasBtn = document.getElementById('exportTomasBtn');
+  if(exportTomasBtn) exportTomasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Tomás', CLASE_CSV_COLUMNS, 'clases-Tomas', exportTomasBtn));
+  const exportIsaiasBtn = document.getElementById('exportIsaiasBtn');
+  if(exportIsaiasBtn) exportIsaiasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Isaías', CLASE_CSV_COLUMNS, 'clases-Isaias', exportIsaiasBtn));
+  const exportCanchaBtn = document.getElementById('exportCanchaBtn');
+  if(exportCanchaBtn) exportCanchaBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='cancha', CANCHA_CSV_COLUMNS, 'reservas-cancha', exportCanchaBtn));
+
+}
+
+/* ---------- RENDER: CONTENIDO DEL MODAL ---------- */
+function renderTypeStep(m){
+  return `
+    <h3>${esc(m.court)} · ${m.time}</h3>
+    <p class="modal-sub">¿Qué deseas reservar en este horario?</p>
+    <div class="type-options">
+      <button class="type-card" data-booking-type="cancha">
+        <span class="type-icon">${ic('ball')}</span>
+        <span class="type-label">Cancha</span>
+        <span class="type-sub">Juego libre</span>
+      </button>
+      <button class="type-card" data-booking-type="clase">
+        <span class="type-icon">${ic('user')}</span>
+        <span class="type-label">Clase</span>
+        <span class="type-sub">Con entrenador</span>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+    </div>
+  `;
+}
+function renderCanchaSummaryStep(m){
+  const maxSlots = maxAvailableSlots(m.time, m.court);
+  const opts = DURATIONS.filter(d=>d.slots<=maxSlots);
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const price = courtPriceForRange(m.time, bookingFlow.duration);
+  return `
+    <h3>Reservar ${esc(m.court)}</h3>
+    <p class="modal-sub">${fmtDate(state.selectedDate)} · desde ${m.time}</p>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${opts.map(d=>`<label class="dur-pill ${d.slots===bookingFlow.duration?'active':''}"><input type="radio" name="duration" value="${d.slots}" ${d.slots===bookingFlow.duration?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="summary-line">${m.time}–${endTime} · ${formatCOP(price)}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="toFormBtn">Continuar</button>
+    </div>
+  `;
+}
+function renderClaseSummaryStep(m){
+  const maxSlots = maxAvailableSlots(m.time, m.court);
+  const opts = DURATIONS.filter(d=>d.slots<=maxSlots);
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const price = classPriceForRange(bookingFlow.players, bookingFlow.duration);
+  return `
+    <h3>Clase con entrenador</h3>
+    <p class="modal-sub">${esc(m.court)} · ${fmtDate(state.selectedDate)} · desde ${m.time}</p>
+    <div class="field"><label>Entrenador</label><div class="duration-options">
+      ${TRAINERS.map(t=>`<label class="dur-pill ${t===bookingFlow.trainer?'active':''}"><input type="radio" name="trainer" value="${esc(t)}" ${t===bookingFlow.trainer?'checked':''}><span>${esc(t)}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${opts.map(d=>`<label class="dur-pill ${d.slots===bookingFlow.duration?'active':''}"><input type="radio" name="duration" value="${d.slots}" ${d.slots===bookingFlow.duration?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Número de jugadores</label><div class="duration-options">
+      ${[1,2,3,4].map(n=>`<label class="dur-pill ${n===bookingFlow.players?'active':''}"><input type="radio" name="players" value="${n}" ${n===bookingFlow.players?'checked':''}><span>${n}</span></label>`).join('')}
+    </div></div>
+    <div class="summary-line">${m.time}–${endTime} · ${formatCOP(price)}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="toFormBtn">Continuar</button>
+    </div>
+  `;
+}
+function renderFormStep(m){
+  const endTime = computeEndTime(m.time, bookingFlow.duration);
+  const listPrice = bookingFlow.bookingType==='cancha'
+    ? courtPriceForRange(m.time,bookingFlow.duration)
+    : classPriceForRange(bookingFlow.players,bookingFlow.duration);
+  const finalPrice = listPrice * discountFactor(bookingFlow.courtesy);
+  const baseLine = bookingFlow.bookingType==='cancha'
+    ? `${m.court} · ${m.time}–${endTime}`
+    : `${bookingFlow.trainer} · ${m.court} · ${m.time}–${endTime} · ${bookingFlow.players} jugador(es)`;
+  const priceLine = (bookingFlow.courtesy && bookingFlow.courtesy!=='none')
+    ? `${formatCOP(finalPrice)} (cortesía · lista ${formatCOP(listPrice)})`
+    : formatCOP(finalPrice);
+  const courtesyBlock = state.isAdmin ? `
+    <div class="field"><label>Cortesía (staff)</label><div class="duration-options">
+      <label class="dur-pill ${bookingFlow.courtesy==='none'?'active':''}"><input type="radio" name="courtesy" value="none" ${bookingFlow.courtesy==='none'?'checked':''}><span>Sin cortesía</span></label>
+      <label class="dur-pill ${bookingFlow.courtesy==='quarter'?'active':''}"><input type="radio" name="courtesy" value="quarter" ${bookingFlow.courtesy==='quarter'?'checked':''}><span>Cortesía 1/4</span></label>
+      <label class="dur-pill ${bookingFlow.courtesy==='full'?'active':''}"><input type="radio" name="courtesy" value="full" ${bookingFlow.courtesy==='full'?'checked':''}><span>Cortesía completa</span></label>
+    </div></div>` : '';
+  return `
+    <h3>Tus datos</h3>
+    <p class="modal-sub">${baseLine} · ${priceLine}</p>
+    <div class="field" style="position:relative;">
+      <label for="nameInput">Nombre</label>
+      <input type="text" id="nameInput" placeholder="Ej. Laura" autocomplete="off">
+      <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" placeholder="Ej. Gómez"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" placeholder="Ej. 300 123 4567" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="emailInput">Correo electrónico (opcional · recibe la invitación al calendario y el video)</label><input type="email" id="emailInput" placeholder="Ej. laura@correo.com"></div>
+    <div class="field"><label for="commentInput">Comentario (opcional)</label><input type="text" id="commentInput" placeholder="Ej. cumpleaños, trae su raqueta..."></div>
+    ${courtesyBlock}
+    <p class="pay-note">Pago en el club al finalizar · admite pagos parciales y varios medios de pago</p>
+    <label class="legal-check"><input type="checkbox" id="legalDatos"><span>Autorizo el tratamiento de mis datos personales conforme a la Ley 1581 de 2012 (Habeas Data - Colombia), para efectos de esta reserva y contacto por parte del club.</span></label>
+    <label class="legal-check"><input type="checkbox" id="legalExoneracion"><span>Declaro que participo en la actividad deportiva bajo mi propia responsabilidad y exonero a Bahía Padel de responsabilidad por lesiones derivadas de la práctica.</span></label>
+    <label class="legal-check"><input type="checkbox" id="legalVideo"><span>Autorizo la grabación en video del partido y su acceso mediante el código de video que recibiré. El club conserva los videos 30 días y puedo pedir su borrado por WhatsApp.</span></label>
+    <label class="legal-check legal-all"><input type="checkbox" id="legalTodos"><span>El cliente acepta los tres puntos anteriores</span></label>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="backBtn">Atrás</button>
+      <button class="btn-confirm" id="modalConfirm" disabled>Confirmar reserva</button>
+    </div>
+  `;
+}
+function renderEditStep(m){
+  const label = m.bookingType==='cancha' ? `Cancha · ${m.court}` : `Clase con ${m.trainer} · ${m.court}`;
+  const parts = (m.prefillName||'').trim().split(/\s+/).filter(Boolean);
+  const prefillNombre = parts[0] || '';
+  const prefillApellido = parts.slice(1).join(' ');
+  const courtesy = m.prefillCourtesy || 'none';
+  const dateStr = fmtDate(state.selectedDate);
+  const tempBooking = { price:Number(m.prefillPrice)||0, payments:Array.isArray(m.prefillPayments)?m.prefillPayments:[], endTime:m.endTime };
+  const pay = paymentSummary(tempBooking);
+  const ended = bookingHasEnded(tempBooking, dateStr);
+  const statusClass = pay.status==='paid' ? 'paid' : pay.status==='partial' ? 'partial' : 'pending';
+  const paymentsHtml = pay.payments.length ? pay.payments.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).map(p=>{
+    const hora = p.ts ? new Date(p.ts).toLocaleString('es-CO',{timeZone:'America/Bogota',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+    return `<div class="payment-row"><div><b>${esc(p.method||'Pago')}</b> · ${formatCOP(p.amount||0)}<small>${p.comment ? ' · '+esc(p.comment) : ''}${hora ? ' · '+esc(hora) : ''}${p.actor ? ' · '+esc(p.actor) : ''}</small></div><button type="button" class="payment-delete" data-payment-delete="${esc(p.id||'')}">Eliminar</button></div>`;
+  }).join('') : '<div class="payment-empty">Aún no hay pagos registrados.</div>';
+  const paymentForm = !ended
+    ? `<div class="payment-wait">El pago se habilita cuando termine la reserva (${esc(m.endTime)}).</div>`
+    : pay.pending < 1
+      ? '<div class="payment-complete">Esta reserva está pagada completamente.</div>'
+      : `<div class="payment-add">
+          <div class="field"><label for="paymentMethod">Forma de pago</label><select id="paymentMethod"><option value="">Selecciona una forma de pago</option>${PAYMENT_METHODS.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div>
+          <div class="field"><label for="paymentAmount">Monto</label><input type="number" id="paymentAmount" min="1" max="${Math.round(pay.pending)}" step="1000" value="${Math.round(pay.pending)}"></div>
+          <div class="field"><label for="paymentComment">Comentario del pago (opcional)</label><input type="text" id="paymentComment" placeholder="Ej. 2 jugadores efectivo / transferencia Bancolombia"></div>
+          <button type="button" class="btn-confirm payment-add-btn" id="addPaymentBtn">Registrar pago</button>
+        </div>`;
+  return `
+    <h3>Editar reserva</h3>
+    <p class="modal-sub">${esc(label)} · ${m.startTime}–${m.endTime}</p>
+    <div class="payment-box">
+      <div class="payment-head"><div><b>Pago de la reserva</b><span class="payment-badge ${statusClass}">${esc(paymentStatusText(tempBooking))}</span></div></div>
+      <div class="payment-summary"><div><span>Total</span><strong>${formatCOP(pay.total)}</strong></div><div><span>Pagado</span><strong>${formatCOP(pay.paid)}</strong></div><div><span>Pendiente</span><strong>${formatCOP(pay.pending)}</strong></div></div>
+      ${paymentForm}
+      <div class="payment-history"><b>Pagos registrados</b>${paymentsHtml}</div>
+    </div>
+    <div class="field" style="position:relative;">
+      <label for="nameInput">Nombre</label>
+      <input type="text" id="nameInput" value="${esc(prefillNombre)}" autocomplete="off">
+      <div id="clientSuggestions" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="apellidoInput">Apellido</label><input type="text" id="apellidoInput" value="${esc(prefillApellido)}"></div>
+    <div class="field" style="position:relative;">
+      <label for="phoneInput">Teléfono / WhatsApp</label>
+      <input type="tel" id="phoneInput" value="${esc(m.prefillPhone||'')}" autocomplete="off">
+      <div id="clientSuggestionsPhone" class="client-suggestions" style="display:none;"></div>
+    </div>
+    <div class="field"><label for="emailInput">Correo electrónico</label><input type="email" id="emailInput" value="${esc(m.prefillEmail||'')}"></div>
+    <div class="field"><label for="commentInput">Comentario de la reserva</label><input type="text" id="commentInput" value="${esc(m.prefillComment||'')}"></div>
+    <div class="field"><label>Cortesía</label><div class="duration-options">
+      <label class="dur-pill ${courtesy==='none'?'active':''}"><input type="radio" name="editCourtesy" value="none" ${courtesy==='none'?'checked':''}><span>Sin cortesía</span></label>
+      <label class="dur-pill ${courtesy==='quarter'?'active':''}"><input type="radio" name="editCourtesy" value="quarter" ${courtesy==='quarter'?'checked':''}><span>Cortesía 1/4</span></label>
+      <label class="dur-pill ${courtesy==='full'?'active':''}"><input type="radio" name="editCourtesy" value="full" ${courtesy==='full'?'checked':''}><span>Cortesía completa</span></label>
+    </div></div>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Guardar cambios</button>
+    </div>
+  `;
+}
+function renderEditBlockStep(m){
+  return `
+    <h3>Editar bloqueo</h3>
+    <p class="modal-sub">${esc(m.court)} · ${m.startTime}–${m.endTime}</p>
+    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" value="${esc(m.prefillTitle||'')}"></div>
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Guardar cambios</button>
+    </div>
+  `;
+}
+function renderBlockFormStep(){
+  return `
+    <h3>Crear bloqueo</h3>
+    <p class="modal-sub">Reserva el horario para mantenimiento, eventos, torneos, etc. Se repite si lo indicas.</p>
+    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" placeholder="Ej. Mantenimiento, Torneo interno"></div>
+    <div class="field"><label>Cancha</label><div class="duration-options">
+      ${COURTS.map(c=>`<label class="dur-pill ${blockForm.court===c?'active':''}"><input type="radio" name="blockCourt" value="${esc(c)}" ${blockForm.court===c?'checked':''}><span>${esc(c)}</span></label>`).join('')}
+      <label class="dur-pill ${blockForm.court==='__all__'?'active':''}"><input type="radio" name="blockCourt" value="__all__" ${blockForm.court==='__all__'?'checked':''}><span>Todas</span></label>
+    </div></div>
+    <div class="field"><label for="blockDateInput">Fecha de inicio</label><input type="date" id="blockDateInput" value="${blockForm.startDate}"></div>
+    <div class="field"><label for="blockTimeInput">Hora de inicio</label>
+      <select id="blockTimeInput">
+        ${TIME_SLOTS.map(t=>`<option value="${t}" ${t===blockForm.startTime?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Duración</label><div class="duration-options">
+      ${DURATIONS.map(d=>`<label class="dur-pill ${blockForm.duration===d.slots?'active':''}"><input type="radio" name="blockDuration" value="${d.slots}" ${blockForm.duration===d.slots?'checked':''}><span>${d.label}</span></label>`).join('')}
+    </div></div>
+    <div class="field"><label>Repetición</label><div class="duration-options">
+      <label class="dur-pill ${blockForm.recurrence==='once'?'active':''}"><input type="radio" name="blockRecurrence" value="once" ${blockForm.recurrence==='once'?'checked':''}><span>Solo este día</span></label>
+      <label class="dur-pill ${blockForm.recurrence==='weekly'?'active':''}"><input type="radio" name="blockRecurrence" value="weekly" ${blockForm.recurrence==='weekly'?'checked':''}><span>Cada semana</span></label>
+      <label class="dur-pill ${blockForm.recurrence==='daily'?'active':''}"><input type="radio" name="blockRecurrence" value="daily" ${blockForm.recurrence==='daily'?'checked':''}><span>Cada día</span></label>
+    </div></div>
+    ${blockForm.recurrence!=='once' ? `<div class="field"><label for="blockOccurrencesInput">Número de repeticiones</label><input type="number" id="blockOccurrencesInput" min="1" max="52" value="${blockForm.occurrences}"></div>` : ''}
+    <div class="error-text" id="modalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancelar</button>
+      <button class="btn-confirm" id="createBlockBtn">Crear bloqueo</button>
+    </div>
+  `;
+}
+function renderModalContent(){
+  const m = state.modal;
+  if(!m) return '';
+  if(m.type==='court-flow'){
+    if(bookingFlow.step==='type') return renderTypeStep(m);
+    if(bookingFlow.step==='summary') return bookingFlow.bookingType==='cancha' ? renderCanchaSummaryStep(m) : renderClaseSummaryStep(m);
+    if(bookingFlow.step==='form') return renderFormStep(m);
+  }
+  if(m.type==='edit') return renderEditStep(m);
+  if(m.type==='edit-block') return renderEditBlockStep(m);
+  if(m.type==='block') return renderBlockFormStep();
+  return '';
+}
+function renderModal(){
+  if(!state.modal) return '';
+  return `<div class="overlay" id="overlay"><div class="modal">${renderModalContent()}</div></div>`;
+}
+function updateModalDOM(){
+  const modalEl = document.querySelector('.modal');
+  if(!modalEl) return;
+  modalEl.innerHTML = renderModalContent();
+  bindModalContent();
+}
+function bindClientAutocomplete(){
+  const nameInputEl = document.getElementById('nameInput');
+  const suggestBox = document.getElementById('clientSuggestions');
+  const phoneInputEl = document.getElementById('phoneInput');
+  const suggestBoxPhone = document.getElementById('clientSuggestionsPhone');
+
+  function fillFromClient(c){
+    if(nameInputEl) nameInputEl.value = c.nombre || '';
+    const apEl = document.getElementById('apellidoInput'); if(apEl) apEl.value = c.apellido||'';
+    if(phoneInputEl) phoneInputEl.value = c.phone||'';
+    const emEl = document.getElementById('emailInput'); if(emEl) emEl.value = c.email||'';
+  }
+  function renderSuggestions(box, matches){
+    if(matches.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+    box.innerHTML = matches.map((c,idx)=>`
+      <div class="client-suggestion-item" data-suggest-idx="${idx}">
+        <div class="csi-name">${esc(c.nombre)} ${esc(c.apellido||'')}</div>
+        <div class="csi-phone">${esc(c.phone||'')}</div>
+      </div>
+    `).join('');
+    box.style.display = 'block';
+    box.querySelectorAll('[data-suggest-idx]').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        fillFromClient(matches[Number(item.dataset.suggestIdx)]);
+        box.style.display = 'none'; box.innerHTML='';
+      });
+    });
+  }
+
+  if(nameInputEl && suggestBox){
+    nameInputEl.addEventListener('input', ()=>{
+      const q = nameInputEl.value.trim().toLowerCase();
+      if(q.length < 2){ suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.nombre||'').toLowerCase().startsWith(q)).slice(0,6);
+      renderSuggestions(suggestBox, matches);
+    });
+    nameInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBox.style.display='none'; }, 150); });
+  }
+
+  if(phoneInputEl && suggestBoxPhone){
+    phoneInputEl.addEventListener('input', ()=>{
+      const q = phoneInputEl.value.replace(/\D/g,'');
+      if(q.length < 3){ suggestBoxPhone.style.display='none'; suggestBoxPhone.innerHTML=''; return; }
+      const matches = (state.clients||[]).filter(c => (c.phone||'').replace(/\D/g,'').includes(q)).slice(0,6);
+      renderSuggestions(suggestBoxPhone, matches);
+    });
+    phoneInputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggestBoxPhone.style.display='none'; }, 150); });
+  }
+}
+function bindModalContent(){
+  const cancelBtn = document.getElementById('modalCancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+  bindClientAutocomplete();
+
+  const addPaymentBtn = document.getElementById('addPaymentBtn');
+  if(addPaymentBtn){
+    addPaymentBtn.addEventListener('click', async ()=>{
+      const method=(document.getElementById('paymentMethod')||{}).value||'';
+      const amount=(document.getElementById('paymentAmount')||{}).value||0;
+      const comment=((document.getElementById('paymentComment')||{}).value||'').trim();
+      const original=addPaymentBtn.textContent;
+      addPaymentBtn.disabled=true; addPaymentBtn.textContent='Registrando…';
+      try{ await addBookingPayment(state.modal.groupId,method,amount,comment); }
+      catch(e){ showToast(e.message||'No se pudo registrar el pago.'); addPaymentBtn.disabled=false; addPaymentBtn.textContent=original; }
+    });
+  }
+  document.querySelectorAll('[data-payment-delete]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const ok=await confirmar('¿Eliminar este pago?','El saldo pendiente se recalculará.',{ok:'Sí, eliminar',cancelar:'Volver'});
+      if(!ok) return;
+      try{ await deleteBookingPayment(state.modal.groupId,btn.dataset.paymentDelete); }
+      catch(e){ showToast(e.message||'No se pudo eliminar el pago.'); }
+    });
+  });
+
+  const backBtn = document.getElementById('backBtn');
+  if(backBtn){
+    backBtn.addEventListener('click', ()=>{
+      if(bookingFlow.step==='summary') bookingFlow.step = 'type';
+      else if(bookingFlow.step==='form') bookingFlow.step = 'summary';
+      updateModalDOM();
+    });
+  }
+
+  document.querySelectorAll('[data-booking-type]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      bookingFlow.bookingType = btn.dataset.bookingType;
+      bookingFlow.step = 'summary';
+      updateModalDOM();
+    });
+  });
+
+  document.querySelectorAll('.dur-pill').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const input = p.querySelector('input');
+      if(!input) return;
+      input.checked = true;
+      if(input.name==='editCourtesy'){
+        const group = p.closest('.duration-options');
+        if(group) group.querySelectorAll('.dur-pill').forEach(x=>x.classList.remove('active'));
+        p.classList.add('active');
+        return;
+      }
+      if(input.name==='duration') bookingFlow.duration = Number(input.value);
+      else if(input.name==='trainer') bookingFlow.trainer = input.value;
+      else if(input.name==='players') bookingFlow.players = Number(input.value);
+      else if(input.name==='courtesy') bookingFlow.courtesy = input.value;
+      else if(input.name==='blockCourt') blockForm.court = input.value;
+      else if(input.name==='blockDuration') blockForm.duration = Number(input.value);
+      else if(input.name==='blockRecurrence') blockForm.recurrence = input.value;
+      updateModalDOM();
+    });
+  });
+
+  const toFormBtn = document.getElementById('toFormBtn');
+  if(toFormBtn){
+    toFormBtn.addEventListener('click', ()=>{
+      bookingFlow.step = 'form';
+      updateModalDOM();
+    });
+  }
+
+  const legales = ['legalDatos','legalExoneracion','legalVideo'].map(id=>document.getElementById(id)).filter(Boolean);
+  const legalTodos = document.getElementById('legalTodos');
+  if(legales.length){
+    const sync = ()=>{
+      const ok = legales.every(c=>c.checked);
+      document.getElementById('modalConfirm').disabled = !ok;
+      if(legalTodos) legalTodos.checked = ok;
+    };
+    legales.forEach(c=>c.addEventListener('change', sync));
+    if(legalTodos) legalTodos.addEventListener('change', ()=>{ legales.forEach(c=>{ c.checked = legalTodos.checked; }); sync(); });
+  }
+
+  const confirmBtn = document.getElementById('modalConfirm');
+  if(confirmBtn){
+    confirmBtn.addEventListener('click', async ()=>{
+      const m = state.modal;
+      const errEl = document.getElementById('modalError');
+      if(errEl) errEl.style.display = 'none';
+      const original = confirmBtn.textContent;
+
+      if(m.type==='court-flow'){
+        const nombre = document.getElementById('nameInput').value.trim();
+        const apellido = document.getElementById('apellidoInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const commentEl = document.getElementById('commentInput');
+        const comment = commentEl ? commentEl.value.trim() : '';
+        if(!nombre || !apellido || !phone){
+          if(errEl){ errEl.textContent = 'Completa nombre, apellido y teléfono.'; errEl.style.display = 'block'; }
+          return;
+        }
+        if(email && !/^\S+@\S+\.\S+$/.test(email)){
+          if(errEl){ errEl.textContent = 'Ingresa un correo válido.'; errEl.style.display = 'block'; }
+          return;
+        }
+        const name = `${nombre} ${apellido}`.trim();
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{
+          await confirmSlotBooking(m.time, m.court, bookingFlow, name, phone, email, comment);
+          await upsertClient(nombre, apellido, phone, email);
+          render();
+        }catch(err){ showToast('No se pudo guardar. Revisa tu conexión e intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
+      } else if(m.type==='edit'){
+        const nombre = document.getElementById('nameInput').value.trim();
+        const apellido = document.getElementById('apellidoInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const commentEl = document.getElementById('commentInput');
+        const comment = commentEl ? commentEl.value.trim() : '';
+        const courtesyRadio = document.querySelector('input[name="editCourtesy"]:checked');
+        const courtesy = courtesyRadio ? courtesyRadio.value : 'none';
+        if(!nombre || !apellido || !phone){
+          if(errEl){ errEl.textContent = 'Completa nombre, apellido y teléfono.'; errEl.style.display = 'block'; }
+          return;
+        }
+        const name = `${nombre} ${apellido}`.trim();
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{
+          await editBooking(m.groupId, name, phone, email, comment, courtesy);
+          await upsertClient(nombre, apellido, phone, email);
+          render();
+        }catch(err){ showToast('No se pudo guardar. Intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+
+      } else if(m.type==='edit-block'){
+        const title = document.getElementById('titleInput').value.trim();
+        if(!title){
+          if(errEl){ errEl.textContent = 'Escribe un título para el bloqueo.'; errEl.style.display = 'block'; }
+          return;
+        }
+        confirmBtn.disabled = true; confirmBtn.textContent = 'Guardando…';
+        try{ await editBlockTitle(m.groupId, title); render(); }
+        catch(err){ showToast('No se pudo guardar. Intenta de nuevo.'); confirmBtn.disabled=false; confirmBtn.textContent=original; }
+      }
+    });
+  }
+
+  const createBlockBtn = document.getElementById('createBlockBtn');
+  if(createBlockBtn){
+    createBlockBtn.addEventListener('click', async ()=>{
+      const errEl = document.getElementById('modalError');
+      if(errEl) errEl.style.display = 'none';
+      const title = document.getElementById('titleInput').value.trim();
+      const startDate = document.getElementById('blockDateInput').value;
+      const startTime = document.getElementById('blockTimeInput').value;
+      const occInput = document.getElementById('blockOccurrencesInput');
+      const occurrences = occInput ? Math.max(1, Number(occInput.value)||1) : 1;
+      if(!title){
+        if(errEl){ errEl.textContent = 'Escribe un título para el bloqueo.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if(!startDate){
+        if(errEl){ errEl.textContent = 'Elige una fecha de inicio.'; errEl.style.display = 'block'; }
+        return;
+      }
+      const original = createBlockBtn.textContent;
+      createBlockBtn.disabled = true;
+      createBlockBtn.textContent = 'Creando…';
+      try{
+        const result = await createRecurringBlock(title, blockForm.court, startDate, startTime, blockForm.duration, blockForm.recurrence, occurrences);
+        let msg = `Bloqueo creado en ${result.created} fecha(s).`;
+        if(result.skippedDates.length) msg += ` ${result.skippedDates.length} con conflicto.`;
+        showToast(msg);
+        closeModal();
+        await loadDateData();
+      }catch(err){
+        showToast('No se pudo crear el bloqueo. Intenta de nuevo.');
+        createBlockBtn.disabled = false;
+        createBlockBtn.textContent = original;
+      }
+    });
+  }
+}
+function bindModal(){
+  const overlay = document.getElementById('overlay');
+  if(!overlay) return;
+  overlay.addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+  bindModalContent();
+}
+
+/* ---------- RENDER: BANNER WHATSAPP ---------- */
+function renderConfirmBanner(){
+  if(!state.lastConfirmation) return '';
+  return `<div class="wa-banner">
+    <span>${ic('check')} Reserva guardada${estadoInvitacionTexto()}</span>
+    <a class="wa-btn" href="${buildWhatsAppLink(state.lastConfirmation.phone, state.lastConfirmation.message)}" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>
+    ${state.lastConfirmation.gcal ? `<a class="wa-btn" href="${state.lastConfirmation.gcal}" target="_blank" rel="noopener">${ic('calendar')} Añadir a calendario</a>` : ''}
+    <button class="wa-dismiss" id="waDismiss">✕</button>
+  </div>`;
+}
+
+/* ---------- RENDER PRINCIPAL ---------- */
+function render(){
+  if(!state.appUnlocked){ renderLockScreen(); renderHeartbeat(); return; }
+  renderNav();
+  renderHeartbeat();
+  const app = document.getElementById('app');
+  // Conservar el scroll de la grilla y de la página: el refresco automático no debe mover nada.
+  const grillaVieja = app.querySelector('.court-scroll');
+  const scrollTop = grillaVieja ? grillaVieja.scrollTop : null;
+  const scrollLeft = grillaVieja ? grillaVieja.scrollLeft : null;
+  const pageY = window.scrollY;
+  if(state.loading){
+    app.innerHTML = `<div class="loading-note">Cargando reservas…</div><div class="skeleton" aria-hidden="true">${'<div></div>'.repeat(6)}</div>`;
+  } else {
+    let html;
+    if(state.tab==='cancha') html = renderCanchaTab();
+    else if(state.tab==='clases') html = renderClasesTab();
+    else html = renderPanelTab();
+
+    app.innerHTML = html + renderModal();
+    const grillaNueva = app.querySelector('.court-scroll');
+    if(grillaNueva && scrollTop !== null){ grillaNueva.scrollTop = scrollTop; grillaNueva.scrollLeft = scrollLeft; }
+    window.scrollTo(0, pageY);
+
+    bindDatePills();
+    if(state.tab==='cancha') bindCanchaTab();
+    else if(state.tab==='clases') bindClasesTab();
+    else bindPanelTab();
+    bindModal();
+  }
+
+  const bannerWrap = document.getElementById('waBannerWrap');
+  bannerWrap.innerHTML = renderConfirmBanner();
+  const dismissBtn = document.getElementById('waDismiss');
+  if(dismissBtn) dismissBtn.addEventListener('click', ()=>{ state.lastConfirmation=null; render(); });
+}
+
+/* ---------- INIT ---------- */
+(async function init(){
+  initDates();
+  await trySessionRestore();
+  // Validamos la sesión restaurada contra el servidor: si el token caducó (o el
+  // código ya no vale), volvemos a la pantalla de entrada en vez de mostrar
+  // datos vacíos. Solo un 401 fuerza el bloqueo; un fallo de red no.
+  if(state.appUnlocked){
+    try{ await window.__api('auth', {}); }
+    catch(err){
+      if(err && err.noAuth){
+        state.appUnlocked = false; state.isAdmin = false;
+        await clearSessionState();
+        if(window.__clearAppCode) window.__clearAppCode();
+      }
+    }
+  }
+  render();
+  if(state.appUnlocked){
+    state.clients = await loadClients();
+    await loadDateData();
+    startPolling();
+  }
+})();
+</script>
+</body>
+</html>
+ + Math.round(Number(n)||0).toLocaleString('es-CO');
+}
+function paymentSummary(b){
+  const total = Math.max(0, Number((b||{}).price)||0);
+  const payments = Array.isArray((b||{}).payments) ? b.payments : [];
+  const paid = payments.reduce((sum,p)=>sum + Math.max(0, Number(p.amount)||0), 0);
+  const pending = Math.max(0, total - paid);
+  const status = total===0 || pending < 1 ? 'paid' : paid > 0 ? 'partial' : 'pending';
+  return { total, paid, pending, status, payments };
+}
+function paymentStatusText(b){
+  const p = paymentSummary(b);
+  if(p.status==='paid') return 'Pagado';
+  if(p.status==='partial') return 'Pago parcial · falta ' + formatCOP(p.pending);
+  return 'Pendiente · ' + formatCOP(p.pending);
+}
+function bookingHasEnded(b, dateStr){
+  if(!b || !b.endTime || !dateStr) return false;
+  const end = new Date(dateStr + 'T' + b.endTime + ':00-05:00');
+  return isFinite(end.getTime()) && Date.now() >= end.getTime();
 }
 function courtOccupancyPercent(court){
   let occupied = 0;
