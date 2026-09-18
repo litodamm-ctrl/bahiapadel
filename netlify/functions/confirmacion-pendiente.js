@@ -71,6 +71,7 @@ exports.handler = async function () {
   const grupos = new Map();
   for (const b of Object.values(dia || {})) {
     if (!b || typeof b !== "object" || !b.groupId || !b.email) continue;
+    if (String(b.groupId).startsWith("pm-")) continue; // import histórico: no reenviar confirmaciones
     if (!grupos.has(b.groupId)) grupos.set(b.groupId, b);
   }
 
