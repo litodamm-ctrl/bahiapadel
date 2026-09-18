@@ -5,6 +5,7 @@
 "use strict";
 
 const confirmacion = require("./confirmacion.js");
+const EMAIL_CONFIRMATIONS_ENABLED = !/^(0|false|off|no)$/i.test(String(process.env.EMAIL_CONFIRMATIONS_ENABLED || "true").trim());
 
 function cabecerasSupabase() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -53,6 +54,13 @@ async function leerDia(fecha) {
 
 exports.handler = async function () {
   const fecha = fechaBogota();
+  if (!EMAIL_CONFIRMATIONS_ENABLED) {
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      body: JSON.stringify({ fecha, desactivado: true, mensaje: "Correos de confirmación pausados" }),
+    };
+  }
   const code = codigoStaff();
   if (!code) return { statusCode: 500, body: JSON.stringify({ error: "Falta código de staff" }) };
 
