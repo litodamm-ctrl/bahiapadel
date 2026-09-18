@@ -1,4 +1,5 @@
 [build]
+  command = "node scripts/build.cjs && npm test"
   publish = "."
   functions = "netlify/functions"
 
@@ -30,6 +31,12 @@
 
 # ── No servir nada que no sea la app ──
 # publish = "." publica todo el repo. Estas reglas devuelven 404 en lo interno.
+[[redirects]]
+  from = "/scripts/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
 [[redirects]]
   from = "/confirmacion.js"
   to = "/index.html"
