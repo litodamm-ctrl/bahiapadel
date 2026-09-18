@@ -25,6 +25,7 @@
        CLUB_MAPS_URL   enlace a Google Maps del club
        MAIL_BCC        copia oculta al club (ej: reservas@tudominio.com)
        WEB_URL         web del club
+       EMAIL_CONFIRMATIONS_ENABLED  true/false para activar o pausar correos
    ──────────────────────────────────────────────────────────────── */
 
 const crypto = require("crypto");
@@ -35,6 +36,7 @@ const RESEND_KEY  = process.env.RESEND_API_KEY;
 const MAIL_FROM   = process.env.MAIL_FROM || "Bahía Padel <onboarding@resend.dev>";
 const MAIL_REPLY  = process.env.MAIL_REPLY_TO || "";
 const MAIL_BCC    = process.env.MAIL_BCC || "";
+const EMAIL_CONFIRMATIONS_ENABLED = !/^(0|false|off|no)$/i.test(String(process.env.EMAIL_CONFIRMATIONS_ENABLED || "true").trim());
 
 const CLUB_NAME   = process.env.CLUB_NAME || "Bahía Padel Social Club";
 const CLUB_ADDR   = process.env.CLUB_ADDRESS || "Bahía Padel Social Club";
@@ -392,7 +394,7 @@ function correoTexto(r, gcal) {
 }
 
 /* Mensaje de WhatsApp listo para wa.me (lo abre la app con un clic). */
-function textoWhatsApp(r, gcal, metodo) {
+function textoWhatsApp(r, gcal, metodo, correoHabilitado = true) {
   const nombre = (r.name || "").trim().split(/\s+/)[0] || "";
   if (metodo === "CANCEL") {
     return "Hola " + nombre + ", tu reserva en " + CLUB_NAME + " del " + fechaLarga(r.fecha) +
@@ -416,7 +418,7 @@ function textoWhatsApp(r, gcal, metodo) {
   }
   l.push("");
   l.push("Agrégala a tu calendario: " + gcal);
-  if (r.email) l.push("También te enviamos la invitación a " + r.email + ".");
+  if (r.email && correoHabilitado) l.push("También te enviamos la invitación a " + r.email + ".");
   l.push("");
   l.push("Te esperamos en cancha! 🎾");
   // El bloque de premio ganado lo calcula la app (loyalty) y viaja tal cual,
@@ -496,14 +498,15 @@ exports.handler = async function (event) {
   let prev = null;
   try { prev = await kvGet("invite:" + r.groupId); } catch (_) { prev = null; }
 
-  if (accion === "crear" && prev && prev.enviado && !body.forzar) {
+  if (accion === "crear" && prev && (prev.enviado || prev.omitidoCorreo) && !body.forzar) {
     // Ya se envió esta confirmación: devolvemos lo mismo sin volver a enviar.
     const evPrev = { fecha: r.fecha, startTime: r.startTime, endTime: r.endTime,
                      titulo: tituloEvento(r), descripcion: descripcionEvento(r) };
     return resp(200, {
       ok: true, repetido: true, correo_enviado: false,
       gcal: linkGoogle(evPrev), outlook: linkOutlook(evPrev),
-      wa_text: textoWhatsApp(r, linkGoogleCorto(r), "REQUEST"),
+      correo_omitido: !!prev.omitidoCorreo,
+      wa_text: textoWhatsApp(r, linkGoogleCorto(r), "REQUEST", !!prev.enviado),
     });
   }
 
@@ -519,7 +522,7 @@ exports.handler = async function (event) {
   const gcal      = linkGoogle(ev);
   const gcalCorto = linkGoogleCorto(r);
   const outlook   = linkOutlook(ev);
-  const wa_text   = textoWhatsApp(r, gcalCorto, metodo);
+  const wa_text   = textoWhatsApp(r, gcalCorto, metodo, EMAIL_CONFIRMATIONS_ENABLED);
 
   const salida = {
     ok: true, correo_enviado: false, gcal, outlook, wa_text,
@@ -527,6 +530,19 @@ exports.handler = async function (event) {
   };
 
   // ── Correo con la invitación de calendario ──
+  if (!EMAIL_CONFIRMATIONS_ENABLED) {
+    salida.correo_omitido = true;
+    salida.aviso = "Correos de confirmación desactivados temporalmente.";
+    if (ev.email) {
+      try {
+        await kvSet("invite:" + r.groupId, {
+          uid, seq, enviado: false, omitidoCorreo: true, email: ev.email,
+          estado: accion, ts: Date.now(),
+        });
+      } catch (_) {}
+    }
+    return resp(200, salida);
+  }
   if (!ev.email) {
     salida.aviso = "La reserva no tiene correo válido: solo se generó el mensaje de WhatsApp.";
     return resp(200, salida);
