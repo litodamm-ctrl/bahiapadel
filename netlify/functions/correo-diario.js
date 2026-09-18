@@ -24,6 +24,7 @@ const RESEND_KEY  = process.env.RESEND_API_KEY;
 const MAIL_FROM   = process.env.MAIL_FROM || "Bahía Padel <onboarding@resend.dev>";
 const MAIL_REPLY  = process.env.MAIL_REPLY_TO || "";
 const MAIL_BCC    = process.env.MAIL_BCC || "";
+const EMAIL_CONFIRMATIONS_ENABLED = !/^(0|false|off|no)$/i.test(String(process.env.EMAIL_CONFIRMATIONS_ENABLED || "true").trim());
 
 const REPLAY_URL = (process.env.REPLAY_URL || "https://padelreplay.netlify.app/").replace(/\/?$/, "/");
 const WEB_URL    = process.env.WEB_URL || "https://bahiapadel.com";
@@ -273,6 +274,10 @@ async function enviarResend(to, correo) {
 /* ════════════════ Handler ════════════════ */
 exports.handler = async function () {
   const out = { desde: null, hasta: null, encontradas: 0, video: 0, gracias: 0, esperando: 0, saltados: 0, sin_email: 0, avisos: [], errores: [] };
+  if (!EMAIL_CONFIRMATIONS_ENABLED) {
+    out.avisos.push("Envío de correos pausado temporalmente.");
+    return { statusCode: 200, body: JSON.stringify(Object.assign(out, { desactivado: true })) };
+  }
   try {
     if (!URL_BASE || !SERVICE_KEY) throw new Error("Faltan SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
     if (!RESEND_KEY) throw new Error("Falta RESEND_API_KEY");
