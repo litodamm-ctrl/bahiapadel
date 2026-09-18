@@ -533,14 +533,20 @@ exports.handler = async function (event) {
   if (!EMAIL_CONFIRMATIONS_ENABLED) {
     salida.correo_omitido = true;
     salida.aviso = "Correos de confirmación desactivados temporalmente.";
-    if (ev.email) {
-      try {
-        await kvSet("invite:" + r.groupId, {
-          uid, seq, enviado: false, omitidoCorreo: true, email: ev.email,
-          estado: accion, ts: Date.now(),
-        });
-      } catch (_) {}
-    }
+    const tsOmitido = Date.now();
+    try {
+      await kvSet("invite:" + r.groupId, {
+        uid, seq, enviado: false, omitidoCorreo: true, email: ev.email || null,
+        estado: accion, ts: tsOmitido,
+      });
+    } catch (_) {}
+    // También bloquea el correo diario/video posterior para reservas de prueba,
+    // de modo que no se envíen mensajes atrasados al reactivar el sistema.
+    try {
+      await kvSet("mailsent:" + r.fecha + ":" + r.groupId, {
+        ts: tsOmitido, omitidoCorreo: true, motivo: "correos_pausados",
+      });
+    } catch (_) {}
     return resp(200, salida);
   }
   if (!ev.email) {
