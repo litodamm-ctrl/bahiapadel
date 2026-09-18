@@ -146,6 +146,7 @@ function reservasDelDia(doc) {
     if (!b) continue;
     if ((b.bookingType || "cancha") === "bloqueo") continue;
     const gid = b.groupId || slotKey;
+    if (String(gid).startsWith("pm-")) continue; // import histórico: no enviar campañas automáticas
     if (vistos.has(gid)) continue;
     vistos.add(gid);
     out.push(Object.assign({ _slot: slotKey, _gid: gid }, b));
