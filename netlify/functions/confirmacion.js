@@ -282,7 +282,7 @@ function descripcionEvento(r) {
   l.push((r.court || "") + " · " + r.startTime + " a " + r.endTime + " (" + duracionTexto(r) + ")");
   const pr = precioTexto(r);
   if (pr) l.push("Valor: " + pr);
-  l.push("Pago en el club.");
+  l.push("Pago en el club al finalizar.");
   if (r.name) l.push("A nombre de: " + r.name);
   if (r.phone) l.push("Contacto: " + r.phone);
   if (r.comment) l.push("Nota: " + r.comment);
@@ -314,7 +314,7 @@ function correoHtml(r, ev, gcal, outlook) {
     fila("👤 A nombre de", r.name || "") +
     fila("📱 Contacto", r.phone || "") +
     fila("💵 Valor", precioTexto(r)) +
-    fila("💳 Pago", "En el club") +
+    fila("💳 Pago", "En el club al finalizar") +
     fila("📝 Nota", r.comment || "") +
     fila("🎬 Código de video", r.codigo_video || "") +
     (r.codigo_video
@@ -376,7 +376,7 @@ function correoTexto(r, gcal) {
   if (r.phone) l.push("Contacto: " + r.phone);
   const pr = precioTexto(r);
   if (pr) l.push("Valor: " + pr);
-  l.push("Pago: en el club");
+  l.push("Pago: en el club al finalizar");
   if (r.comment) l.push("Nota: " + r.comment);
   if (r.codigo_video) {
     l.push("Código de video: " + r.codigo_video);
