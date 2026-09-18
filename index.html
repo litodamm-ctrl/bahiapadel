@@ -506,9 +506,9 @@ function resetBookingFlow(){
   bookingFlow = { step:'type', bookingType:null, duration:1, trainer:TRAINERS[0], players:1, courtesy:'none' };
 }
 
-let blockForm = { court: COURTS[0], startDate:'', startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
+let blockForm = { title:'', court: COURTS[0], startDate:'', startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
 function resetBlockForm(){
-  blockForm = { court: COURTS[0], startDate: fmtDate(state.selectedDate), startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
+  blockForm = { title:'', court: COURTS[0], startDate: fmtDate(state.selectedDate), startTime: TIME_SLOTS[0], duration:1, recurrence:'once', occurrences:4 };
 }
 
 // Rango de fechas de Métricas y reportes: se guarda aquí (no en el HTML) para que
@@ -2062,7 +2062,7 @@ function renderBlockFormStep(){
   return `
     <h3>Crear bloqueo</h3>
     <p class="modal-sub">Reserva el horario para mantenimiento, eventos, torneos, etc. Se repite si lo indicas.</p>
-    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" placeholder="Ej. Mantenimiento, Torneo interno"></div>
+    <div class="field"><label for="titleInput">Título del bloqueo</label><input type="text" id="titleInput" value="${esc(blockForm.title||'')}" placeholder="Ej. Mantenimiento, Torneo interno"></div>
     <div class="field"><label>Cancha</label><div class="duration-options">
       ${COURTS.map(c=>`<label class="dur-pill ${blockForm.court===c?'active':''}"><input type="radio" name="blockCourt" value="${esc(c)}" ${blockForm.court===c?'checked':''}><span>${esc(c)}</span></label>`).join('')}
       <label class="dur-pill ${blockForm.court==='__all__'?'active':''}"><input type="radio" name="blockCourt" value="__all__" ${blockForm.court==='__all__'?'checked':''}><span>Todas</span></label>
@@ -2081,7 +2081,7 @@ function renderBlockFormStep(){
       <label class="dur-pill ${blockForm.recurrence==='weekly'?'active':''}"><input type="radio" name="blockRecurrence" value="weekly" ${blockForm.recurrence==='weekly'?'checked':''}><span>Cada semana</span></label>
       <label class="dur-pill ${blockForm.recurrence==='daily'?'active':''}"><input type="radio" name="blockRecurrence" value="daily" ${blockForm.recurrence==='daily'?'checked':''}><span>Cada día</span></label>
     </div></div>
-    ${blockForm.recurrence!=='once' ? `<div class="field"><label for="blockOccurrencesInput">Número de repeticiones</label><input type="number" id="blockOccurrencesInput" min="1" max="52" value="${blockForm.occurrences}"></div>` : ''}
+    ${blockForm.recurrence!=='once' ? `<div class="field"><label for="blockOccurrencesInput">Número de repeticiones</label><input type="number" id="blockOccurrencesInput" min="1" max="260" value="${blockForm.occurrences}"></div>` : ''}
     <div class="error-text" id="modalError" style="display:none;"></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="modalCancel">Cancelar</button>
@@ -2106,9 +2106,27 @@ function renderModal(){
   if(!state.modal) return '';
   return `<div class="overlay" id="overlay"><div class="modal">${renderModalContent()}</div></div>`;
 }
+function syncBlockFormFromDOM(){
+  if(!state.modal || state.modal.type!=='block') return;
+  const titleEl = document.getElementById('titleInput');
+  const dateEl = document.getElementById('blockDateInput');
+  const timeEl = document.getElementById('blockTimeInput');
+  const occEl = document.getElementById('blockOccurrencesInput');
+  const courtEl = document.querySelector('input[name="blockCourt"]:checked');
+  const durationEl = document.querySelector('input[name="blockDuration"]:checked');
+  const recurrenceEl = document.querySelector('input[name="blockRecurrence"]:checked');
+  if(titleEl) blockForm.title = titleEl.value;
+  if(dateEl && dateEl.value) blockForm.startDate = dateEl.value;
+  if(timeEl && timeEl.value) blockForm.startTime = timeEl.value;
+  if(occEl) blockForm.occurrences = Math.max(1, Number(occEl.value)||1);
+  if(courtEl) blockForm.court = courtEl.value;
+  if(durationEl) blockForm.duration = Number(durationEl.value)||1;
+  if(recurrenceEl) blockForm.recurrence = recurrenceEl.value;
+}
 function updateModalDOM(){
   const modalEl = document.querySelector('.modal');
   if(!modalEl) return;
+  syncBlockFormFromDOM();
   modalEl.innerHTML = renderModalContent();
   bindModalContent();
 }
@@ -2207,6 +2225,7 @@ function bindModalContent(){
 
   document.querySelectorAll('.dur-pill').forEach(p=>{
     p.addEventListener('click', ()=>{
+      if(state.modal && state.modal.type==='block') syncBlockFormFromDOM();
       const input = p.querySelector('input');
       if(!input) return;
       input.checked = true;
@@ -2226,6 +2245,17 @@ function bindModalContent(){
       updateModalDOM();
     });
   });
+
+  if(state.modal && state.modal.type==='block'){
+    const blockTitle = document.getElementById('titleInput');
+    const blockDate = document.getElementById('blockDateInput');
+    const blockTime = document.getElementById('blockTimeInput');
+    const blockOcc = document.getElementById('blockOccurrencesInput');
+    if(blockTitle) blockTitle.addEventListener('input', ()=>{ blockForm.title = blockTitle.value; });
+    if(blockDate) blockDate.addEventListener('change', ()=>{ blockForm.startDate = blockDate.value; });
+    if(blockTime) blockTime.addEventListener('change', ()=>{ blockForm.startTime = blockTime.value; });
+    if(blockOcc) blockOcc.addEventListener('input', ()=>{ blockForm.occurrences = Math.max(1, Number(blockOcc.value)||1); });
+  }
 
   const toFormBtn = document.getElementById('toFormBtn');
   if(toFormBtn){
@@ -2317,11 +2347,11 @@ function bindModalContent(){
     createBlockBtn.addEventListener('click', async ()=>{
       const errEl = document.getElementById('modalError');
       if(errEl) errEl.style.display = 'none';
-      const title = document.getElementById('titleInput').value.trim();
-      const startDate = document.getElementById('blockDateInput').value;
-      const startTime = document.getElementById('blockTimeInput').value;
-      const occInput = document.getElementById('blockOccurrencesInput');
-      const occurrences = occInput ? Math.max(1, Number(occInput.value)||1) : 1;
+      syncBlockFormFromDOM();
+      const title = String(blockForm.title||'').trim();
+      const startDate = blockForm.startDate;
+      const startTime = blockForm.startTime;
+      const occurrences = blockForm.recurrence==='once' ? 1 : Math.max(1, Number(blockForm.occurrences)||1);
       if(!title){
         if(errEl){ errEl.textContent = 'Escribe un título para el bloqueo.'; errEl.style.display = 'block'; }
         return;
