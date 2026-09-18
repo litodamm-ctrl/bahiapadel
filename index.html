@@ -460,7 +460,7 @@ const CANCHA_CSV_COLUMNS = [
 ];
 const CLASE_CSV_COLUMNS = [
   { label:'Tipo', get:r=>'Clase' },
-  { label:'Entrenador', get:r=>r.trainer },
+  { label:'Entrenador', get:r=>normalizeTrainerName(r.trainer) },
   { label:'Fecha', get:r=>r.date },
   { label:'Hora inicio', get:r=>r.startTime },
   { label:'Hora fin', get:r=>r.endTime },
@@ -647,6 +647,16 @@ function isPastSlot(time){
 }
 function formatCOP(n){
   return '$' + Math.round(Number(n)||0).toLocaleString('es-CO');
+}
+function normalizeTrainerName(value){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  let key = raw.toLowerCase();
+  if(key.indexOf('profesor ') === 0) key = key.slice(9).trim();
+  key = key.replaceAll('á','a').replaceAll('é','e').replaceAll('í','i').replaceAll('ó','o').replaceAll('ú','u');
+  if(key === 'tomas') return 'Tomás';
+  if(key === 'isaias') return 'Isaías';
+  return raw.indexOf('Profesor ') === 0 ? raw.slice(9).trim() : raw;
 }
 function paymentSummary(b){
   const total = Math.max(0, Number((b||{}).price)||0);
@@ -1637,7 +1647,9 @@ function renderClasesTab(){
     allClasses.push(b);
   });
   allClasses.sort((a,b)=> a.startTime.localeCompare(b.startTime));
-  const filtered = state.trainerFilter==='todos' ? allClasses : allClasses.filter(c=>c.trainer===state.trainerFilter);
+  const filtered = state.trainerFilter==='todos'
+    ? allClasses
+    : allClasses.filter(c=>normalizeTrainerName(c.trainer)===normalizeTrainerName(state.trainerFilter));
 
   const listHtml = filtered.length===0
     ? `<div class="empty-note">Sin clases programadas ${state.trainerFilter==='todos'?'':'para '+esc(state.trainerFilter)+' '}el ${dateStr}.</div>`
@@ -1645,10 +1657,10 @@ function renderClasesTab(){
       <div class="class-row">
         <div class="class-row-time">${c.startTime}–${c.endTime}</div>
         <div class="class-row-info">
-          <div class="who">${esc(c.trainer)} <span class="type-tag clase">Clase</span></div>
-          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${c.players} jugador(es)${c.comment ? ' · Nota: '+esc(c.comment) : ''} · Pago: ${esc(paymentStatusText(c))}</div>
+          <div class="who">${esc(normalizeTrainerName(c.trainer)||'Entrenador')} <span class="type-tag clase">Clase</span></div>
+          <div class="meta">${esc(c.court)} · ${esc(c.name)} · ${Number(c.players)||1} jugador(es)${c.comment ? ' · Nota: '+esc(c.comment) : ''} · Pago: ${esc(paymentStatusText(c))}</div>
         </div>
-        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, c.trainer, c.court, dateStr, c.startTime, c.endTime, c.players, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="wa-mini" href="${buildWhatsAppLink(c.phone, buildClaseWhatsAppMessage(c.name, normalizeTrainerName(c.trainer), c.court, dateStr, c.startTime, c.endTime, Number(c.players)||1, c.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     `).join('');
 
@@ -1732,7 +1744,7 @@ function renderPanelTab(){
           metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
           waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildCourtWhatsAppMessage(e.name, e.court, dateStr, e.startTime, e.endTime, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
         } else if(type==='clase'){
-          label = `Clase con ${e.trainer} · ${e.court} · ${e.startTime}–${e.endTime} · ${e.players}p`;
+          label = `Clase con ${normalizeTrainerName(e.trainer)||'Entrenador'} · ${e.court} · ${e.startTime}–${e.endTime} · ${Number(e.players)||1}p`;
           metaLine = `${esc(label)} · ${esc(e.phone)}${e.email?' · '+esc(e.email):''} · ${formatCOP(e.price||0)}`;
           waButton = `<a class="wa-mini" href="${buildWhatsAppLink(e.phone, buildClaseWhatsAppMessage(e.name, e.trainer, e.court, dateStr, e.startTime, e.endTime, e.players, e.codigo_video))}" target="_blank" rel="noopener">WhatsApp</a>`;
         } else {
@@ -1868,9 +1880,9 @@ function bindPanelTab(){
     btn.disabled = false; btn.textContent = original;
   }
   const exportTomasBtn = document.getElementById('exportTomasBtn');
-  if(exportTomasBtn) exportTomasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Tomás', CLASE_CSV_COLUMNS, 'clases-Tomas', exportTomasBtn));
+  if(exportTomasBtn) exportTomasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && normalizeTrainerName(b.trainer)==='Tomás', CLASE_CSV_COLUMNS, 'clases-Tomas', exportTomasBtn));
   const exportIsaiasBtn = document.getElementById('exportIsaiasBtn');
-  if(exportIsaiasBtn) exportIsaiasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && b.trainer==='Isaías', CLASE_CSV_COLUMNS, 'clases-Isaias', exportIsaiasBtn));
+  if(exportIsaiasBtn) exportIsaiasBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='clase' && normalizeTrainerName(b.trainer)==='Isaías', CLASE_CSV_COLUMNS, 'clases-Isaias', exportIsaiasBtn));
   const exportCanchaBtn = document.getElementById('exportCanchaBtn');
   if(exportCanchaBtn) exportCanchaBtn.addEventListener('click', ()=> runExport(b=>(b.bookingType||'cancha')==='cancha', CANCHA_CSV_COLUMNS, 'reservas-cancha', exportCanchaBtn));
 
